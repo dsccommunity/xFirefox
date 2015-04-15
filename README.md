@@ -1,6 +1,6 @@
-{{AppVeyor build status badge for master branch}}
+[![Build status](https://ci.appveyor.com/api/projects/status/pe6p3pghfqkvbw77/branch/master?svg=true)](https://ci.appveyor.com/project/PowerShell/xfirefox/branch/master)
 
-#{{ModuleName}}
+# xFirefox
 
 {{Description}}
 
