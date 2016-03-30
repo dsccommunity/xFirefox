@@ -2,18 +2,18 @@ Configuration MSFT_xFirefox
 {
     param
     (
-        [string]$VersionNumber = "31.0",
+        [string]$VersionNumber = "latest",
         [string]$Language = "en-US",
-    [string]$OS = "win",
+        [string]$OS = "win",
         [string]$MachineBits = "x86",
-    [string]$LocalPath = "$env:SystemDrive\Windows\DtlDownloads\Firefox Setup " + $versionNumber +".exe"
+        [string]$LocalPath = "$env:SystemDrive\Windows\DtlDownloads\Firefox Setup " + $VersionNumber +".exe"
     )
     Import-DscResource -ModuleName xPSDesiredStateConfiguration
 
     xRemoteFile Downloader
     {
-         Uri = "http://download.mozilla.org/?product=firefox-" + $VersionNumber +"&os="+$OS+"&lang=" + $Language 
-     DestinationPath = $LocalPath
+        Uri = "https://download.mozilla.org/?product=firefox-" + $VersionNumber +"&os="+$OS+"&lang=" + $Language
+        DestinationPath = $LocalPath
     }
      
     Package Installer
