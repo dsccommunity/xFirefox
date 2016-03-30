@@ -27,6 +27,8 @@ The default is x86.
 
 ### Unreleased
 
+### 1.1.0.0
+
 ### 1.0.0.0
 * Initial release with the following resources 
     - MSFT_xFirefox
