@@ -29,7 +29,10 @@ The default is x86.
 
 ### 1.1.0.0
 
+* Updated MFST_xFireFox to pull latest version by default and use HTTPS
+
 ### 1.0.0.0
+
 * Initial release with the following resources 
     - MSFT_xFirefox
 
