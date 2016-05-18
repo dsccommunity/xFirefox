@@ -27,6 +27,11 @@ The default is x86.
 
 ### Unreleased
 
+### 1.2.0.0
+
+- Added logic to download installer with correct machine bits
+- Added dependency on xPSDesiredStateConfiguration
+
 ### 1.1.0.0
 
 * Updated MFST_xFireFox to pull latest version by default and use HTTPS

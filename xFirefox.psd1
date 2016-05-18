@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.1.0.0'
+ModuleVersion = '1.2.0.0'
 
 # ID used to uniquely identify this module
 GUID = 'df697d0d-4300-4ea1-b14b-78861f0e48da'
@@ -48,7 +48,7 @@ Description = 'Firefox Main module'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+RequiredModules = @( 'xPSDesiredStateConfiguration' )
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -101,7 +101,10 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = '- Added logic to download installer with correct machine bits
+- Added dependency on xPSDesiredStateConfiguration
+
+'
 
     } # End of PSData hashtable
 
