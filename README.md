@@ -27,6 +27,8 @@ The default is x86.
 
 ### Unreleased
 
+### 1.2.0.0
+
 - Added logic to download installer with correct machine bits
 - Added dependency on xPSDesiredStateConfiguration
 
