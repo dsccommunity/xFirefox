@@ -29,6 +29,7 @@ The default is x86.
 ## Versions
 
 ### Unreleased
+* Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
 
 ### 1.2.0.0
 
