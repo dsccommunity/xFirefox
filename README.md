@@ -33,6 +33,7 @@ The default is x86.
 * Update appveyor.yml to use the default template.
 * Added default template files .codecov.yml, .gitattributes, and .gitignore, and
   .vscode folder.
+* The module manifest now contain the correct PowerShell version.
 
 ### 1.2.0.0
 
