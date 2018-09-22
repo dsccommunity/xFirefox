@@ -19,7 +19,7 @@ Please check out common DSC Resources [contributing guidelines](https://github.c
 * **Language**: Specify the language of the browser to be installed.
 The default value is English.
 * **VersionNumber**: Specify the version number of the browser to be installed.
-By default, the latest version is installed. 
+By default, the latest version is installed.
 * **OS**: Specify the operating system on which the browser is to be installed.
 By default, the operating system is Windows.
 * **MachineBits**: Specifies the machine's operating system bit number.
@@ -29,7 +29,10 @@ The default is x86.
 ## Versions
 
 ### Unreleased
-* Converted appveyor.yml to install Pester from PSGallery instead of from Chocolatey.
+
+* Update appveyor.yml to use the default template.
+* Added default template files .codecov.yml, .gitattributes, and .gitignore, and
+  .vscode folder.
 
 ### 1.2.0.0
 
@@ -42,7 +45,7 @@ The default is x86.
 
 ### 1.0.0.0
 
-* Initial release with the following resources 
+* Initial release with the following resources
     - MSFT_xFirefox
 
 ## Examples
@@ -65,7 +68,7 @@ Configuration Sample_InstallFirefoxBrowser
     $OS,
 
     [Parameter(Mandatory)]
-    $LocalPath      
+    $LocalPath
 
     )
 
