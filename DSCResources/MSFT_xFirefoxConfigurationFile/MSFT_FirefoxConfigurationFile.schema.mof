@@ -1,0 +1,6 @@
+ClassVersion("1.0.0.0"), FriendlyName("FirefoxConfigurationFile")]
+class MSFT_SqlScriptQuery : OMI_BaseResource
+{
+    [Key, Description("A hashtable of configuration keys and their desired values")] HashTable Configuration;
+    [Write, Description("Specifies the Firefox installation path")] String InstallDirectory;
+};
