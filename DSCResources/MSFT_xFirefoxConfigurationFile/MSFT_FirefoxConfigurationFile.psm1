@@ -1,3 +1,11 @@
+<#
+    .SYNOPSIS
+        Get-TargetResource returns the Firefox Install path and the current configuration
+        settings in the firefox.cfg file.
+
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
+#>
 function Get-TargetResource
 {
     param
@@ -9,7 +17,7 @@ function Get-TargetResource
 
     if (-not(Test-Path -Path $InstallDirectory))
     {
-        throw "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
+        Write-Warning "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
     }
     elseif (Test-Path -Path "$InstallDirectory\firefox.cfg")
     {
@@ -29,6 +37,16 @@ function Get-TargetResource
     return $return
 }
 
+<#
+    .SYNOPSIS
+        Set-TargetResource sets Firefox config preconfigurations and settings.
+
+    .PARAMETER Configuration
+        Hashtable of desired Settings and Values
+
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
+#>
 function Set-TargetResource
 {
     param
@@ -42,24 +60,12 @@ function Set-TargetResource
         $InstallDirectory = "$env:ProgramFiles\Mozilla Firefox"
     )
 
+    throw -Message "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
     $preconfigs = Test-FirefoxPreconfiguration -InstallDirectory $InstallDirectory
-    foreach ($item in $preconfigs)
+
+    if ($preconfigs)
     {
-        switch ($item)
-        {
-            'filename'
-            {
-
-            }
-            'obscurevalue'
-            {
-
-            }
-            'comment'
-            {
-
-            }
-        }
+        Set-FirefoxPreconfigs -Setting $preconfigs
     }
 
     $configContent = Get-Content -Path "$InstallDirectory\firefox.cfg"
@@ -69,11 +75,21 @@ function Set-TargetResource
         $firefoxSetting = Get-FirefoxSetting -ConfigContent $configContent -Setting $setting
         if (-not(Test-FirefoxSetting))
         {
-            #set correct value if incorrect
+            #set correct value if incorrect. Incorrect could mean doesn't exist or incorrect setting value which require separeate action.
         }
     }
 }
 
+<#
+    .SYNOPSIS
+        Test-TargetResource tests Firefox config preconfigurations and settings.
+
+    .PARAMETER Configuration
+        Hashtable of desired Settings and Values
+
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
+#>
 function Test-TargetResource
 {
     param
@@ -100,6 +116,7 @@ function Test-TargetResource
     }
 
     $inDesiredState = $true
+
     $currentConfiguration = Get-TargetResource -InstallDirectory $InstallDirectory
 
     foreach ($key in $Configuration.Keys)
@@ -121,17 +138,27 @@ function Test-TargetResource
             Write-Warning -Message "Could not find $key in firefox.cfg."
             $inDesiredState = $false
         }
-
-        return $inDesiredState
     }
+
+    return $inDesiredState
 }
 
+<#
+    .SYNOPSIS
+        Returns the setting name and value of the desired setting in a Firefox configuration file.
+
+    .PARAMETER ConfigContent
+        Content of the configuration file to check.
+
+    .PARAMETER Setting
+        Name of the setting to get.
+#>
 function Get-FirefoxSetting
 {
     param
     (
         [Parameter(Mandatory = $true)]
-        [string]
+        [System.Object[]]
         $ConfigContent,
 
         [Parameter()]
@@ -165,17 +192,24 @@ function Get-FirefoxSetting
     return $return
 }
 
+<#
+    .SYNOPSIS
+        Returns the setting name and value in a hashtable.
+
+    .PARAMETER Configuration
+        Array of settings to split.
+#>
 function Split-FirefoxSetting
 {
     param
     (
         [Parameter(Mandatory = $true)]
-        [string[]]
+        [System.Object[]]
         $Configuration
     )
 
     $return = @{}
-    foreach ($config in $configurations)
+    foreach ($config in $Configuration)
     {
         $keyValue = $config -split ','
         $count = $keyValue.count
@@ -197,6 +231,13 @@ function Split-FirefoxSetting
     return $return
 }
 
+<#
+    .SYNOPSIS
+        Verifies if firefox preconfigurations are complete and returns an array of settings that aren't.
+
+    .PARAMETER InstallDirectory
+        Directory where FireFox is installed
+#>
 function Test-FirefoxPreconfiguration
 {
     param
@@ -230,6 +271,16 @@ function Test-FirefoxPreconfiguration
     return $return
 }
 
+<#
+    .SYNOPSIS
+        Tests if Firefox autoconfig.js setting are set correctly.
+
+    .PARAMETER InstallDirectory
+        Directory where FireFox is installed.
+
+    .PARAMETER Setting
+        Name of the setting to Test.
+#>
 function Test-AutoConfigSetting
 {
     param
@@ -277,6 +328,13 @@ function Test-AutoConfigSetting
     return $return
 }
 
+<#
+    .SYNOPSIS
+        Tests if firefox.cfg starts with a comment line.
+
+    .PARAMETER InstallDirectory
+        Directory where FireFox is installed.
+#>
 function Test-ConfigStartWithComment
 {
     param
@@ -288,7 +346,7 @@ function Test-ConfigStartWithComment
 
     $configContent = Get-Content -Path "$InstallDirectory\firefox.cfg"
 
-    if ($configContent -notmatch '^\\\\')
+    if (($configContent | Select-Object -First 1) -notmatch '^\\\\')
     {
         return $false
     }
@@ -296,4 +354,224 @@ function Test-ConfigStartWithComment
     {
         return $true
     }
+}
+
+<#
+    .SYNOPSIS
+        Configures firefox preconfiguration requirements.
+
+    .PARAMETER Setting
+        Array of which preconfigurations need to be set.
+
+    .PARAMETER InstallDirectory
+        Directory where FireFox is installed.
+#>
+function Set-FirefoxPreconfigs
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [string[]]
+        $Setting,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $InstallDirectory
+    )
+
+    $autoConfigPath = "$InstallDirectory\defaults\pref\autoconfig.js"
+    $firefoxCfgPath = "$InstallDirectory\firefox.cfg"
+    foreach ($item in $preconfigs)
+    {
+        switch ($item)
+        {
+            'filename'
+            {
+                if (-not(Test-Path -Path $autoConfigPath))
+                {
+                    New-Item -Path $autoConfigPath -Type File
+                }
+
+                Set-FirefoxSetting -Setting 'pref("general.config.filename", "firefox.cfg");'
+            }
+            'obscurevalue'
+            {
+                Set-FirefoxSetting -Setting 'pref("general.config.obscure_value", 0);'
+            }
+            'comment'
+            {
+                if (-not(Test-Path -Path $autoConfigPath))
+                {
+                    New-Item -Path $firefoxCfgPath -Type File
+                }
+
+                $cfgContent = Get-Content -Path $firefoxCfgPath
+                if(($cfgContent | Select-Object -First 1) -notmatch '^\\\\')
+                {
+                    $addcomment = '// FireFox preference file' + '`r' + $cfgContent
+
+                    Out-File -FilePath $firefoxCfgPath -InputObject $addcomment
+                }
+            }
+        }
+    }
+}
+
+function Write-FirefoxConfiguration
+{
+    param
+    (
+        [Parameter()]
+        [hashtable]
+        $Setting,
+
+        [Parameter()]
+        [switch]
+        $Clobber,
+
+        [Parameter()]
+        [string]
+        [ValidateSet('autoconfig', 'firefox')]
+        $File,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $InstallDirectory
+    )
+
+    $settings = $null
+    if ($Clobber)
+    {
+        foreach ($key in $Setting.Keys)
+        {
+            $value = Format-FireFoxPreference -Value ($Setting.$key)
+
+            $settings += ('lockPref("{0}", {1});' -f $key, $value) + "`n"
+        }
+    }
+    else
+    {
+        $preferences = Merge-FirefoxPreference -Setting $Setting -InstallDirectory $InstallDirectory -File $File
+
+        switch ($File)
+        {
+            'firefox'
+            {
+                foreach ($key in $preferences.Keys)
+                {
+                    $settings += ('lockPref("{0}", {1});' -f $key, $value) + "`n"
+                }
+
+                ForEach-Object -InputObject $File -Process {
+                    "\\Firefox preference file"
+                    ($settings -split "`n")
+                } | Out-file -FilePath "$InstallDirectory\firefox.cfg"
+            }
+            'autoconfig'
+            {
+                foreach ($key in $preferences.Keys)
+                {
+                    $settings += ('pref("{0}", {1});' -f $key, $value) + "`n"
+                }
+
+                ForEach-Object -InputObject $File -Process {
+                    ($settings -split "`n")
+                } | Out-file -FilePath "$InstallDirectory\defaults\pref\autoconfig.js"
+            }
+        }
+    }
+}
+
+<#
+    .SYNOPSIS
+        Formats the value of a FireFox configuration preference.
+        The FireFox.cfg file wants double quotes around words but not around bools
+        or intergers.
+    .PARAMETER Value
+        Specifies the FireFox preference value to be formated.
+#>
+function Format-FireFoxPreference
+{
+    param
+    (
+        [Parameter()]
+        [string]
+        $Value
+    )
+
+    switch ($value)
+    {
+        {[bool]::TryParse($value, [ref]$null) }
+        {
+            $result = $value; break
+        }
+        { [int]::TryParse($value, [ref]$null) }
+        {
+            $result = $value; break
+        }
+        default
+        {
+            $result = '"' + $value + '"'
+        }
+    }
+    return $result
+}
+
+function Merge-FirefoxPreference
+{
+    param
+    (
+        [Parameter()]
+        [hashtable]
+        $Setting,
+
+        [Parameter()]
+        [string]
+        [ValidateSet('autoconfig', 'firefox')]
+        $File,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $InstallDirectory
+    )
+
+    switch ($File)
+    {
+        'firefox'
+        {
+            $content = Get-Content -Path "$InstallDirectory\firefox.cfg"
+            $preferences = Get-FirefoxSetting -ConfigContent $content
+
+            foreach ($key in $Setting.Keys)
+            {
+                if ($preferences.$key -and $preferences.$key -ne $Setting.$key)
+                {
+                    $preferences.$key = $Setting.$key
+                }
+                else
+                {
+                    $preferences.add($key, $Setting.$key)
+                }
+            }
+        }
+        'autoconfig'
+        {
+            Get-Content -Path "$InstallDirectory\defaults\pref\autoconfig.js"
+            $preferences = Get-FirefoxSetting -ConfigContent $content
+
+            foreach ($key in $Setting.Keys)
+            {
+                if ($preferences.$key -and $preferences.$key -ne $Setting.$key)
+                {
+                    $preferences.$key = $Setting.$key
+                }
+                else
+                {
+                    $preferences.add($key, $Setting.$key)
+                }
+            }
+        }
+    }
+
+    return $preferences
 }
