@@ -242,7 +242,7 @@ function Test-FirefoxPreconfiguration
 {
     param
     (
-        [Parameter(Mandatory = $true)
+        [Parameter(Mandatory = $true)]
         [string]
         $InstallDirectory
     )
@@ -372,7 +372,7 @@ function Set-FirefoxPreconfigs
     (
         [Parameter(Mandatory = $true)]
         [string[]]
-        $Setting,
+        $Preconfigs,
 
         [Parameter(Mandatory = $true)]
         [string]
@@ -381,7 +381,7 @@ function Set-FirefoxPreconfigs
 
     $autoConfigPath = "$InstallDirectory\defaults\pref\autoconfig.js"
     $firefoxCfgPath = "$InstallDirectory\firefox.cfg"
-    foreach ($item in $preconfigs)
+    foreach ($item in $Preconfigs)
     {
         switch ($item)
         {
