@@ -24,8 +24,20 @@ function Get-TargetResource
     }
     elseif (Test-Path -Path "$InstallDirectory\firefox.cfg")
     {
+        $namespace = 'root/Microsoft/Windows/DesiredStateConfiguration'
+        $cimPreferenceObjects = New-Object -TypeName 'System.Collections.ObjectModel.Collection`1[Microsoft.Management.Infrastructure.CimInstance]'
+
         $configurationContent = Get-Content -Path "$InstallDirectory\firefox.cfg"
-        $currentFirefoxPreference = Get-FirefoxPreference -ConfigContent $configurationContent
+        $currentPreference = Get-FirefoxPreference -CurrentConfiguration $configurationContent
+
+        foreach ($preference in $currentPreference)
+        {
+            $cimPreferenceObjects += New-CimInstance -ClientOnly -Namespace $namespace -ClassName PreferenceObject -Property @{
+                PrefType   = $preference.PrefType
+                Preference = $preference.Preference
+                Value      = $preference.Value
+            }
+        }
     }
     else
     {
@@ -33,8 +45,8 @@ function Get-TargetResource
     }
 
     $return = @{
-        CurrentConfiguration  = $currentFirefoxPreference
-        ConfigurationLocation = $configurationPath
+        CurrentConfiguration  = $cimPreferenceObjects
+        InstallDirectory      = $InstallDirectory
     }
 
     return $return

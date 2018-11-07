@@ -202,7 +202,7 @@ function Get-FirefoxPreference
             }
             else
             {
-                $match = Select-String -InputObject $line -Pattern "\w*Pref.*\)"
+                $match = Select-String -InputObject $line -Pattern "\w*Pref.*(?=\))"
             }
 
             if ($null -ne $match)
@@ -238,9 +238,9 @@ function Split-FirefoxPreference
     $return = @()
     foreach ($config in $Configuration)
     {
-        $prefSplit = $config -split '('
+        $prefSplit = $config.split('(')
         $prefType = $prefSplit[0]
-        $keyValue = $prefSplit[1] -split ','
+        $keyValue = ($prefSplit[1]).split(',')
         $count = $keyValue.count
 
         if ($count -gt 2)
@@ -250,14 +250,14 @@ function Split-FirefoxPreference
         }
         else
         {
-            $key = $keyValue[1].replace('"', '')
-            $Value = $keyValue[2].replace('"', '')
+            $key = $keyValue[0].replace('"', '')
+            $Value = $keyValue[1].replace('"', '')
         }
 
         $collection = @{
-            PrefType       = $prefType
-            PreferenceName = $key
-            Value          = $value
+            PrefType       = $prefType.trim()
+            PreferenceName = $key.trim()
+            Value          = $value.trim()
         }
 
         $return += $collection
