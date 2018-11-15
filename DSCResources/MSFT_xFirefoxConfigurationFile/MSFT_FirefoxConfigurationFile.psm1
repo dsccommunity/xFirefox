@@ -1,4 +1,5 @@
-Import-Module  "$PSScriptRoot\helper.psm1"
+$currentPath = = Split-Path $MyInvocation.MyCommand.Path -Parent
+Import-Module  "$currentPath\helper.psm1" -Force
 
 <#
     .SYNOPSIS
@@ -73,10 +74,14 @@ function Set-TargetResource
 
         [Parameter()]
         [string]
-        $InstallDirectory = "$env:ProgramFiles\Mozilla Firefox"
+        $InstallDirectory = "$env:ProgramFiles\Mozilla Firefox",
+
+        [Parameter()]
+        [switch]
+        $Force = $false
     )
 
-    if (Test-Path -Path $InstallDirectory)
+    if (-not(Test-Path -Path $InstallDirectory))
     {
         throw -Message "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
     }
@@ -114,12 +119,16 @@ function Test-TargetResource
     param
     (
         [Parameter(Mandatory = $true)]
-        [hashtable[]]
+        [psobject]
         $Configuration,
 
         [Parameter()]
         [string]
-        $InstallDirectory = "$env:ProgramFiles\Mozilla Firefox"
+        $InstallDirectory = "$env:ProgramFiles\Mozilla Firefox",
+
+        [Parameter()]
+        [switch]
+        $Force = $false
     )
 
     $preconfigurationTest = Test-FirefoxPreconfiguration -InstallDirectory $InstallDirectory
@@ -142,3 +151,5 @@ function Test-TargetResource
 
     return $inDesiredState
 }
+
+Export-ModuleMember -Function *-TargetResource

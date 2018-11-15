@@ -36,12 +36,12 @@ function Test-FirefoxPreconfiguration
         Write-Warning -Message 'Firefox "GeneralConfigurationFile" preference not set to firefox.cfg'
         $return += 'filename'
     }
-    elseif (-not(Test-FirefoxPreference -Configuration $obscureValueConfig -CurrentConfiguration $currentConfiguration))
+    if (-not(Test-FirefoxPreference -Configuration $obscureValueConfig -CurrentConfiguration $currentConfiguration))
     {
-        Write-Warning -Message -Message 'Firefox "DoNotObscure" preference is incorrect'
+        Write-Warning -Message 'Firefox "DoNotObscure" preference is incorrect'
         $return += 'obscurevalue'
     }
-    elseif (-not(Test-ConfigStartWithComment -InstallDirectory $InstallDirectory))
+    if (-not(Test-ConfigStartWithComment -InstallDirectory $InstallDirectory))
     {
         Write-Warning -Message 'firefox.cfg does not begin with a commented line and will ignore any preference in the first line'
         $return += 'comment'
@@ -138,18 +138,15 @@ function Set-FirefoxPreconfigs
             }
             'comment'
             {
-                if (-not(Test-Path -Path $autoConfigPath))
+                if (-not(Test-Path -Path $firefoxCfgPath))
                 {
                     New-Item -Path $firefoxCfgPath -Type File
                 }
 
                 $cfgContent = Get-Content -Path $firefoxCfgPath
-                if(($cfgContent | Select-Object -First 1) -notmatch '^\\\\')
-                {
-                    $addcomment = '// FireFox preference file' + '`r' + $cfgContent
+                $addcomment = '// FireFox preference file' + '`r' + $cfgContent
 
-                    Out-File -FilePath $firefoxCfgPath -InputObject $addcomment
-                }
+                Out-File -FilePath $firefoxCfgPath -InputObject $addcomment
             }
         }
     }
@@ -277,8 +274,12 @@ function Test-FirefoxPreference
         $Configuration,
 
         [Parameter(Mandatory = $true)]
-        [string]
-        $CurrentConfiguration
+        [psobject]
+        $CurrentConfiguration,
+
+        [Parameter()]
+        [switch]
+        $Force = $false
     )
 
     $currentPreference = Get-FirefoxPreference -Preference $Preference -CurrentConfiguration $CurrentConfiguration
@@ -384,29 +385,24 @@ function Format-FireFoxPreference
     [CmdletBinding()]
     param
     (
-        [Parameter()]
-        [ValidateSet('pref','defaultPref','lockPref')]
-        [string]
-        $PrefType,
-
-        [Parameter()]
+        [Parameter(Mandatory = $true)]
         [string]
         $Value
     )
 
-    switch ($value)
+    switch ($Value)
     {
-        {[bool]::TryParse($value, [ref]$null) }
+        {[bool]::TryParse($Value, [ref]$null) }
         {
-            $result = $value; break
+            $result = $Value; break
         }
-        { [int]::TryParse($value, [ref]$null) }
+        { [int]::TryParse($Value, [ref]$null) }
         {
-            $result = $value; break
+            $result = $Value; break
         }
         default
         {
-            $result = '"' + $value + '"'
+            $result = '"' + $Value + '"'
         }
     }
     return $result

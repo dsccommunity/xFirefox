@@ -77,11 +77,6 @@ VariablesToExport = '*'
 # Aliases to export from this module
 AliasesToExport = '*'
 
-# DSC resources to export from this module
-DscResourcesToExport = @(
-    'xFirefoxConfigurationFile'
-)
-
 # List of all modules packaged with this module
 # ModuleList = @()
 
