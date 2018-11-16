@@ -62,6 +62,9 @@ function Get-TargetResource
 
     .PARAMETER InstallDirectory
         The directory where Firefox is installed.
+
+    .PARAMETER Force
+        Switch to set a strict configuration.
 #>
 function Set-TargetResource
 {
@@ -111,6 +114,9 @@ function Set-TargetResource
 
     .PARAMETER InstallDirectory
         The directory where Firefox is installed.
+
+    .PARAMETER Force
+        Switch to set a strict configuration.
 #>
 function Test-TargetResource
 {

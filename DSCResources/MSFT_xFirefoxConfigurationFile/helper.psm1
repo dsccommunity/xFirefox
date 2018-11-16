@@ -161,14 +161,13 @@ function Set-FirefoxPreconfigs
         Set-FirefoxConfiguration -Configuration $config -File 'autoconfig' -InstallDirectory $InstallDirectory
     }
 }
-
 #endregion
 #region Firefox Preferences
 <#
     .SYNOPSIS
         Returns the preference name and value of the desired preference in a Firefox configuration file.
 
-    .PARAMETER ConfigContent
+    .PARAMETER CurrentConfiguration
         Content of the configuration file to check.
 
     .PARAMETER Preference
@@ -264,6 +263,20 @@ function Split-FirefoxPreference
     return $return
 }
 
+<#
+    .SYNOPSIS
+        Tests if a configuration matches the current preferences.
+
+    .PARAMETER Configuration
+        Array of preferences.
+
+    .PARAMETER CurrentConfiguration
+        Content of the configuration file to check.
+
+    .PARAMETER Force
+        Switch to set a strict configuration.
+#>
+
 function Test-FirefoxPreference
 {
     [CmdletBinding()]
@@ -311,6 +324,19 @@ function Test-FirefoxPreference
 
 #endregion
 #region Write Firefox Files
+<#
+    .SYNOPSIS
+        Writes the preferences to the appropriate file.
+
+    .PARAMETER File
+        States which file to configure.
+
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
+
+    .PARAMETER Force
+        Switch to set a strict configuration.
+#>
 function Set-FirefoxConfiguration
 {
     [CmdletBinding()]
@@ -426,6 +452,17 @@ function Format-FireFoxPreference
     }
     return $result
 }
+
+<#
+    .SYNOPSIS
+        Merges Firefox preferences to a sigle array of preference hashtables
+
+    .PARAMETER Configuration
+        Array of preferences.
+
+    .PARAMETER ConfigurationContent
+        Content of the configuration file to check.
+#>
 
 function Merge-FirefoxPreference
 {
