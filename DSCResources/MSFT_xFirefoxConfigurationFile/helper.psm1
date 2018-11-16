@@ -179,7 +179,8 @@ function Get-FirefoxPreference
     [CmdletBinding()]
     param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
+        [AllowNull()]
         [System.Object[]]
         $CurrentConfiguration,
 
@@ -195,7 +196,7 @@ function Get-FirefoxPreference
         {
             if ($Preference)
             {
-                $match = Select-String -InputObject $line -Pattern "\w*Pref\(`"$Preference.*)"
+                $match = Select-String -InputObject $line -Pattern "\w*Pref\(`"$Preference.*(?=\))"
             }
             else
             {
@@ -270,7 +271,7 @@ function Test-FirefoxPreference
     param
     (
         [Parameter(Mandatory = $true)]
-        [String]
+        [psobject]
         $Configuration,
 
         [Parameter(Mandatory = $true)]
@@ -282,24 +283,27 @@ function Test-FirefoxPreference
         $Force = $false
     )
 
-    $currentPreference = Get-FirefoxPreference -Preference $Preference -CurrentConfiguration $CurrentConfiguration
-    if ($null -eq $currentPreference)
+    foreach ($config in $Configuration)
     {
-        Write-Verbose -Message "$Preference not found."
-        return $false
-    }
+        $currentPreference = Get-FirefoxPreference -CurrentConfiguration $CurrentConfiguration -Preference $config.PreferenceName
+        if ($null -eq $currentPreference)
+        {
+            Write-Verbose -Message "$Preference not found."
+            return $false
+        }
 
-    $inDesiredState = $true
+        $inDesiredState = $true
 
-    if ($currentPreference.PrefType -ne $PrefType)
-    {
-        Write-Verbose -Message "PrefType: $PrefType does not matched desired setting for $Preference"
-        $inDesiredState = $false
-    }
-    if($currentPreference.Value -ne $Value)
-    {
-        Write-Verbose -Message "Value: $Value does not matched desired setting for $Preference"
-        $inDesiredState = $false
+        if ($currentPreference.PrefType -ne $config.PrefType)
+        {
+            Write-Verbose -Message "PrefType: $PrefType does not matched desired setting for $Preference"
+            $inDesiredState = $false
+        }
+        if ($currentPreference.Value -ne $config.Value)
+        {
+            Write-Verbose -Message "Value: $Value does not matched desired setting for $Preference"
+            $inDesiredState = $false
+        }
     }
 
     return $inDesiredState
@@ -323,8 +327,24 @@ function Set-FirefoxConfiguration
 
         [Parameter(Mandatory = $true)]
         [string]
-        $InstallDirectory
+        $InstallDirectory,
+
+        [Parameter()]
+        [switch]
+        $Force = $false
     )
+
+    switch ($File)
+        {
+            'firefox'
+            {
+                $filePath = "$InstallDirectory\firefox.cfg"
+            }
+            'autoconfig'
+            {
+                $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
+            }
+        }
 
     $preferences = $null
     if ($Force)
@@ -333,41 +353,40 @@ function Set-FirefoxConfiguration
         {
             $pref = $preference.PrefType
             $preferenceName = $preference.PreferenceName
-            $value = Format-FireFoxPreference -Value ($Preference.$key) -PrefType $preference.PrefType
+            $value = Format-FireFoxPreference -Value ($preference.Value)
 
-            $newConfiguration += ('{0}("{1}", {2});' -f $pref, $preferenceName, $value) + "`n"
+            $preferences += ('{0}("{1}", {2});' -f $pref, $preferenceName, $value) + "`n"
         }
     }
     else
     {
-        $newConfiguration = Merge-FirefoxPreference -Preference $Preference -InstallDirectory $InstallDirectory -File $File
+        $configurationContent = Get-Content -Path $filePath -ErrorAction SilentlyContinue
+        $newConfiguration = Merge-FirefoxPreference -Configuration $Configuration -ConfigurationContent $configurationContent
 
+        foreach ($preference in $newConfiguration)
+        {
+            $pref = $preference.PrefType
+            $preferenceName = $preference.PreferenceName
+            $value = Format-FireFoxPreference -Value ($preference.Value)
+
+            $preferences += ('{0}("{1}", {2});' -f $pref, $preferenceName, $value) + "`n"
+        }
     }
 
     switch ($File)
     {
         'firefox'
         {
-            foreach ($item in $newConfiguration)
-            {
-                $preferences += ('lockPref("{0}", {1});' -f $key, $value) + "`n"
-            }
-
             ForEach-Object -InputObject $File -Process {
                 "\\Firefox preference file"
                 ($preferences -split "`n")
-            } | Out-file -FilePath "$InstallDirectory\firefox.cfg"
+            } | Out-file -FilePath $filePath
         }
         'autoconfig'
         {
-            foreach ($key in $preferences.Keys)
-            {
-                $preferences += ('{0}("{1}", {2});' -f $pref, $key, $value) + "`n"
-            }
-
             ForEach-Object -InputObject $File -Process {
                 ($preferences -split "`n")
-            } | Out-file -FilePath "$InstallDirectory\defaults\pref\autoconfig.js"
+            } | Out-file -FilePath $filePath
         }
     }
 }
@@ -413,58 +432,39 @@ function Merge-FirefoxPreference
     [CmdletBinding()]
     param
     (
-        [Parameter()]
-        [hashtable]
-        $Preference,
-
-        [Parameter()]
-        [string]
-        [ValidateSet('autoconfig', 'firefox')]
-        $File,
-
         [Parameter(Mandatory = $true)]
-        [string]
-        $InstallDirectory
+        [hashtable[]]
+        $Configuration,
+
+        [Parameter()]
+        [AllowNull()]
+        [psobject]
+        $ConfigurationContent
     )
 
-    switch ($File)
-    {
-        'firefox'
-        {
-            $content = Get-Content -Path "$InstallDirectory\firefox.cfg"
-            $preferences = Get-FirefoxPreference -ConfigContent $content
+    $return = @()
+    $preferences = Get-FirefoxPreference -CurrentConfiguration $ConfigurationContent
 
-            foreach ($key in $Preference.Keys)
+    foreach ($pref in $preferences)
+    {
+        $duplicate = $false
+        foreach ($config in $Configuration)
+        {
+            if ($pref.PreferenceName -eq $config.PreferenceName)
             {
-                if ($preferences.$key -and $preferences.$key -ne $Preference.$key)
-                {
-                    $preferences.$key = $Preference.$key
-                }
-                else
-                {
-                    $preferences.add($key, $Preference.$key)
-                }
+                $duplicate = $true
+                break
             }
         }
-        'autoconfig'
-        {
-            Get-Content -Path "$InstallDirectory\defaults\pref\autoconfig.js"
-            $preferences = Get-FirefoxPreference -ConfigContent $content
 
-            foreach ($key in $Preference.Keys)
-            {
-                if ($preferences.$key -and $preferences.$key -ne $Preference.$key)
-                {
-                    $preferences.$key = $Preference.$key
-                }
-                else
-                {
-                    $preferences.add($key, $Preference.$key)
-                }
-            }
+        if ($duplicate -ne $true)
+        {
+            $return += $pref
         }
     }
 
-    return $preferences
+    $return += $Configuration
+
+    return $return
 }
 #endregion

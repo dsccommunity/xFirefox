@@ -1,4 +1,4 @@
-$currentPath = = Split-Path $MyInvocation.MyCommand.Path -Parent
+$currentPath = Split-Path $MyInvocation.MyCommand.Path -Parent
 Import-Module  "$currentPath\helper.psm1" -Force
 
 <#
