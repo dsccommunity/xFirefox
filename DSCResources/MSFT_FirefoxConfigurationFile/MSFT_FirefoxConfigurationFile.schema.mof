@@ -2,12 +2,12 @@
 class PreferenceObject
 {
     [Write, Description("Preference type of the object.")] String PrefType;
-    [Write, Description("Preference name of the object.")] String Preference;
+    [Write, Description("Preference name of the object.")] String PreferenceName;
     [Write, Description("Value of the object.")] String Value;
 };
 
 ClassVersion("1.0.0.0"), FriendlyName("FirefoxConfigurationFile")]
-class MSFT_SqlScriptQuery : OMI_BaseResource
+class MSFT_FirefoxConfigurationFile : OMI_BaseResource
 {
     [Write, Description("A hashtable of configuration keys and their desired values"), EmbeddedInstance("PreferenceObject")] String PreferenceObject[];
     [Key, Description("Specifies the Firefox installation path")] String InstallDirectory;

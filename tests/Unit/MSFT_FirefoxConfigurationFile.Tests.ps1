@@ -11,7 +11,7 @@ if ( (-not (Test-Path -Path (Join-Path -Path $script:moduleRoot -ChildPath 'DSCR
 }
 
 Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResource.Tests\TestHelper.psm1') -Force
-Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResources\MSFT_xFirefoxConfigurationFile\helper.psm1')
+Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResources\MSFT_FirefoxConfigurationFile\FirefoxConfigurationFileHelper.psm1')
 
 $TestEnvironment = Initialize-TestEnvironment `
     -DSCModuleName $script:DSCModuleName `
@@ -173,8 +173,8 @@ try
         }
 
         #region helper function
-        InModuleScope Helper {
-            Describe 'Test-FirefoxPreconfiguration'{
+        InModuleScope FirefoxConfigurationFileHelper {
+            Describe 'Test-FirefoxPreconfiguration' {
                 $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
                 Mock -CommandName Get-Content -MockWith {$firefoxPreference}
                 Context 'When all preconfigs are incorrect' {

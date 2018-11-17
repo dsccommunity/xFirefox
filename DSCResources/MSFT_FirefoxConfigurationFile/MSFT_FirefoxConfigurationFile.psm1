@@ -1,5 +1,5 @@
 $currentPath = Split-Path $MyInvocation.MyCommand.Path -Parent
-Import-Module  "$currentPath\helper.psm1" -Force
+Import-Module  "$currentPath\FirefoxCOnfigurationFileHelper.psm1" -Force
 
 <#
     .SYNOPSIS
