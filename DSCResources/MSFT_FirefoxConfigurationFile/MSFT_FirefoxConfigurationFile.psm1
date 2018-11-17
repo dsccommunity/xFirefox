@@ -57,7 +57,7 @@ function Get-TargetResource
     .SYNOPSIS
         Set-TargetResource sets Firefox config preconfigurations and preferences.
 
-    .PARAMETER Configuration
+    .PARAMETER PreferenceObject
         Hashtable of desired Preferences and Values
 
     .PARAMETER InstallDirectory
@@ -73,7 +73,7 @@ function Set-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [hashtable[]]
-        $Configuration,
+        $PreferenceObject,
 
         [Parameter()]
         [string]
@@ -97,11 +97,11 @@ function Set-TargetResource
 
     if ($Force)
     {
-        Set-FirefoxConfiguration -Configuration $Configuration -InstallDirectory $InstallDirectory -Force
+        Set-FirefoxConfiguration -Configuration $PreferenceObject -InstallDirectory $InstallDirectory -Force
     }
     else
     {
-        Set-FirefoxConfiguration -Configuration $Configuration -InstallDirectory $InstallDirectory
+        Set-FirefoxConfiguration -Configuration $PreferenceObject -InstallDirectory $InstallDirectory
     }
 }
 
@@ -109,7 +109,7 @@ function Set-TargetResource
     .SYNOPSIS
         Test-TargetResource tests Firefox config preconfigurations and Preferences.
 
-    .PARAMETER Configuration
+    .PARAMETER PreferenceObject
         Hashtable of desired Preferences and Values
 
     .PARAMETER InstallDirectory
@@ -126,7 +126,7 @@ function Test-TargetResource
     (
         [Parameter(Mandatory = $true)]
         [psobject]
-        $Configuration,
+        $PreferenceObject,
 
         [Parameter()]
         [string]
@@ -148,11 +148,11 @@ function Test-TargetResource
     $currentConfiguration = Get-TargetResource -InstallDirectory $InstallDirectory
     if ($Force)
     {
-       $inDesiredState = Test-FirefoxPreference -Configuration $Configuration -CurrentConfiguration $currentConfiguration.CurrentConfiguration -Force
+       $inDesiredState = Test-FirefoxPreference -Configuration $PreferenceObject -CurrentConfiguration $currentConfiguration.CurrentConfiguration -Force
     }
     else
     {
-        $inDesiredState = Test-FirefoxPreference -Configuration $Configuration -CurrentConfiguration $currentConfiguration.CurrentConfiguration
+        $inDesiredState = Test-FirefoxPreference -Configuration $PreferenceObject -CurrentConfiguration $currentConfiguration.CurrentConfiguration
     }
 
     return $inDesiredState

@@ -78,7 +78,7 @@ VariablesToExport = '*'
 AliasesToExport = '*'
 
 # DSC resources to export from this module
-#DscResourcesToExport = @('MSFT_FirefoxConfigurationFile', 'FirefoxConfigurationHelper')
+DscResourcesToExport = @('MSFT_FirefoxConfigurationFile', 'FirefoxConfigurationFileHelper')
 
 # List of all modules packaged with this module
 # ModuleList = @()
