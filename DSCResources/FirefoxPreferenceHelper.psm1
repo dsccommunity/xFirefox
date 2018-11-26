@@ -18,25 +18,28 @@ function Test-FirefoxPreconfiguration
     )
 
     $return = @()
-    $fileNameConfig = @{
-        PrefType   = 'prefLock'
-        Preference = 'general.config.filename'
-        Value      = 'Mozilla.cfg'
+    $fileNameParam = @{
+        PreferenceType   = 'prefLock'
+        PreferenceName   = 'general.config.filename'
+        PreferenceValue  = 'Mozilla.cfg'
+        InstallDirectory = $InstallDirectory
+        $File            = 'Autoconfig'
     }
 
-    $obscureValueConfig = @{
-        PrefType   = 'prefLock'
-        Preference = 'general.config.obscure_value'
-        Value      = '0'
+    $obscureValueParam = @{
+        PreferenceType   = 'prefLock'
+        PreferenceName   = 'general.config.obscure_value'
+        PreferenceValue  = '0'
+        InstallDirectory = $InstallDirectory
+        $File            = 'Autoconfig'
     }
 
-    $currentConfiguration = Get-Content -Path "$InstallDirectory\defaults\pref\autoconfig.js"
-    if(-not(Test-FirefoxPreference -Configuration $fileNameConfig -CurrentConfiguration $currentConfiguration))
+    if(-not(Test-FirefoxPreference @fileNameParam))
     {
         Write-Warning -Message 'Firefox "GeneralConfigurationFile" preference not set to Mozilla.cfg'
         $return += 'filename'
     }
-    if (-not(Test-FirefoxPreference -Configuration $obscureValueConfig -CurrentConfiguration $currentConfiguration))
+    if (-not(Test-FirefoxPreference @obscureValueParam))
     {
         Write-Warning -Message 'Firefox "DoNotObscure" preference is incorrect'
         $return += 'obscurevalue'
@@ -144,7 +147,7 @@ function Set-FirefoxPreconfigs
                 }
 
                 $cfgContent = Get-Content -Path $firefoxCfgPath
-                $addcomment = '// FireFox preference file' + '`r' + $cfgContent
+                $addcomment = '// FireFox preference file' + "`r" + $cfgContent
 
                 Out-File -FilePath $firefoxCfgPath -InputObject $addcomment
             }
@@ -184,26 +187,58 @@ function Get-FirefoxPreference
 
         [Parameter()]
         [string]
-        $PreferenceName
+        $PreferenceName,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Mozilla', 'Autoconfig')]
+        [string]
+        $File
     )
 
-    $currentConfiguration = Get-Content "$InstallDirectory\Mozilla.cfg"
+    switch ($File)
+    {
+        'Mozilla'
+        {
+            $currentConfiguration = Get-Content "$InstallDirectory\Mozilla.cfg"
+        }
+        'Autoconfig'
+        {
+            $currentConfiguration = Get-Content "$InstallDirectory\defaults\pref\autoconfig.js"
+        }
+    }
+
+    $preferences = @()
     foreach ($line in $currentConfiguration)
     {
         if ($null -ne $line)
         {
+            if ($PreferenceName)
             {
                 $match = Select-String -InputObject $line -Pattern "\w*Pref\(`"$PreferenceName.*(?=\))"
             }
-
+            else
+            {
+                $match = Select-String -InputObject $line -Pattern '\*Pref\(.*(?=\))'
+            }
             if ($null -ne $match)
             {
-                $preference = $match.Matches.Value
+                $preferences += $match.Matches.Value
             }
         }
     }
 
-    $return = Split-FirefoxPreference -Preference $preference
+    if ($null -ne $preferences)
+    {
+        $return = @()
+        foreach ($preference in $preferences)
+        {
+            $return += Split-FirefoxPreference -Preference $preference
+        }
+    }
+    else
+    {
+        Write-Verbose -Message "$PreferenceName not found"
+    }
 
     return $return
 }
@@ -289,13 +324,18 @@ function Test-FirefoxPreference
 
         [Parameter(Mandatory = $true)]
         [string]
-        $InstallDirectory
+        $InstallDirectory,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Mozilla', 'Autoconfig')]
+        [string]
+        $File
     )
 
-    $currentPreference = Get-FirefoxPreference -Preference $config.PreferenceName -InstallDirectory $InstallDirectory
+    $currentPreference = Get-FirefoxPreference -PreferenceName $PreferenceName -InstallDirectory $InstallDirectory -File $File
     if ($null -eq $currentPreference)
     {
-        Write-Verbose -Message "$Preference not found."
+        Write-Verbose -Message "$PreferenceName not found"
         return $false
     }
 
@@ -303,12 +343,12 @@ function Test-FirefoxPreference
 
     if ($currentPreference.PrefType -ne $config.PrefType)
     {
-        Write-Verbose -Message "PrefType: $PrefType does not matched desired setting for $Preference"
+        Write-Verbose -Message "PrefType: $PrefType does not matched desired setting for $PreferenceName"
         $inDesiredState = $false
     }
     if ($currentPreference.Value -ne $config.Value)
     {
-        Write-Verbose -Message "Value: $Value does not matched desired setting for $Preference"
+        Write-Verbose -Message "Value: $Value does not matched desired setting for $PreferenceName"
         $inDesiredState = $false
     }
 
@@ -330,19 +370,28 @@ function Test-FirefoxPreference
     .PARAMETER Force
         Switch to set a strict configuration.
 #>
-function Set-FirefoxConfiguration
+function Set-FirefoxPreferece
 {
     [CmdletBinding()]
     param
     (
+        [Parameter(Mandatory = $true)]
+        [string]
+        $PreferenceName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $PreferenceType,
+
         [Parameter()]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $Configuration,
+        [AllowNull()]
+        [string]
+        $PreferenceValue,
 
         [Parameter()]
         [string]
-        [ValidateSet('autoconfig', 'firefox')]
-        $File = 'firefox',
+        [ValidateSet('Autoconfig', 'Mozilla')]
+        $File = 'Mozilla',
 
         [Parameter(Mandatory = $true)]
         [string]
@@ -351,11 +400,11 @@ function Set-FirefoxConfiguration
 
     switch ($File)
     {
-        'firefox'
+        'Mozilla'
         {
             $filePath = "$InstallDirectory\Mozilla.cfg"
         }
-        'autoconfig'
+        'Autoconfig'
         {
             $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
         }
@@ -364,7 +413,7 @@ function Set-FirefoxConfiguration
     $preferences = $null
 
     $configurationContent = Get-Content -Path $filePath -ErrorAction SilentlyContinue
-    $newConfiguration = Merge-FirefoxPreference -Configuration $Configuration -ConfigurationContent $configurationContent
+    $newConfiguration = Merge-FirefoxPreference -PreferenceType $PreferenceType -PreferenceName $PreferenceName -PreferenceValue $PreferenceValue -ConfigurationContent $configurationContent
 
     foreach ($preference in $newConfiguration)
     {
@@ -377,14 +426,14 @@ function Set-FirefoxConfiguration
 
     switch ($File)
     {
-        'firefox'
+        'Mozilla'
         {
             ForEach-Object -InputObject $File -Process {
-                "\\Firefox preference file"
+                "\\Firefox preference file `n"
                 ($preferences -split "`n")
             } | Out-file -FilePath $filePath
         }
-        'autoconfig'
+        'Autoconfig'
         {
             ForEach-Object -InputObject $File -Process {
                 ($preferences -split "`n")
@@ -446,8 +495,17 @@ function Merge-FirefoxPreference
     param
     (
         [Parameter(Mandatory = $true)]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $Configuration,
+        [string]
+        $PreferenceName,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $PreferenceType,
+
+        [Parameter()]
+        [AllowNull()]
+        [string]
+        $PreferenceValue,
 
         [Parameter()]
         [AllowNull()]
@@ -455,47 +513,15 @@ function Merge-FirefoxPreference
         $ConfigurationContent
     )
 
-    $return = @()
     $preferences = Get-FirefoxPreference -CurrentConfiguration $ConfigurationContent
+    $return = $preferences | Where-Object -FilterScript {$_.PreferenceName -ne $PreferenceName}
 
-    foreach ($pref in $preferences)
-    {
-        $duplicate = $false
-        foreach ($config in $Configuration)
-        {
-            if ($pref.PreferenceName -eq $config.PreferenceName)
-            {
-                $duplicate = $true
-                break
-            }
-        }
-
-        if ($duplicate -ne $true)
-        {
-            $return += $pref
-        }
+    $return += @{
+        PreferenceType  = $PreferenceType
+        PreferenceName  = $PreferenceName
+        PreferenceValue = $PreferenceValue
     }
-
-    $return += $Configuration
 
     return $return
 }
 #endregion
-
-function ConvertTo-KeyValuePairArrayToHashtable
-{
-    param
-    (
-        [parameter(Mandatory = $true)]
-        [Microsoft.Management.Infrastructure.CimInstance[]]
-        $Array
-    )
-
-    $hashtable = @{}
-    foreach($item in $array)
-    {
-        $hashtable += @{$item.Key = $item.Value}
-    }
-
-    return $hashtable
-}
