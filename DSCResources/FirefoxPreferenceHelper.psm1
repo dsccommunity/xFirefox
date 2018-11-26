@@ -21,7 +21,7 @@ function Test-FirefoxPreconfiguration
     $fileNameConfig = @{
         PrefType   = 'prefLock'
         Preference = 'general.config.filename'
-        Value      = 'firefox.cfg'
+        Value      = 'Mozilla.cfg'
     }
 
     $obscureValueConfig = @{
@@ -33,7 +33,7 @@ function Test-FirefoxPreconfiguration
     $currentConfiguration = Get-Content -Path "$InstallDirectory\defaults\pref\autoconfig.js"
     if(-not(Test-FirefoxPreference -Configuration $fileNameConfig -CurrentConfiguration $currentConfiguration))
     {
-        Write-Warning -Message 'Firefox "GeneralConfigurationFile" preference not set to firefox.cfg'
+        Write-Warning -Message 'Firefox "GeneralConfigurationFile" preference not set to Mozilla.cfg'
         $return += 'filename'
     }
     if (-not(Test-FirefoxPreference -Configuration $obscureValueConfig -CurrentConfiguration $currentConfiguration))
@@ -43,7 +43,7 @@ function Test-FirefoxPreconfiguration
     }
     if (-not(Test-ConfigStartWithComment -InstallDirectory $InstallDirectory))
     {
-        Write-Warning -Message 'firefox.cfg does not begin with a commented line and will ignore any preference in the first line'
+        Write-Warning -Message 'Mozilla.cfg does not begin with a commented line and will ignore any preference in the first line'
         $return += 'comment'
     }
     else
@@ -56,7 +56,7 @@ function Test-FirefoxPreconfiguration
 
 <#
     .SYNOPSIS
-        Tests if firefox.cfg starts with a comment line.
+        Tests if Mozilla.cfg starts with a comment line.
 
     .PARAMETER InstallDirectory
         Directory where FireFox is installed.
@@ -72,7 +72,7 @@ function Test-ConfigStartWithComment
         $InstallDirectory
     )
 
-    $configContent = Get-Content -Path "$InstallDirectory\firefox.cfg"
+    $configContent = Get-Content -Path "$InstallDirectory\Mozilla.cfg"
 
     if (($configContent | Select-Object -First 1) -notmatch '^\\\\')
     {
@@ -109,7 +109,7 @@ function Set-FirefoxPreconfigs
     )
 
     $autoConfigPath = "$InstallDirectory\defaults\pref\autoconfig.js"
-    $firefoxCfgPath = "$InstallDirectory\firefox.cfg"
+    $firefoxCfgPath = "$InstallDirectory\Mozilla.cfg"
     $config = @()
 
     foreach ($item in $Preconfigs)
@@ -121,7 +121,7 @@ function Set-FirefoxPreconfigs
                 $fileNameCollection = @{
                     PrefType       = 'lockPref'
                     PreferenceName = 'general.config.filename'
-                    Value          = 'firefox.cfg'
+                    Value          = 'Mozilla.cfg'
                 }
 
                 $config += $fileNameCollection
@@ -167,10 +167,10 @@ function Set-FirefoxPreconfigs
     .SYNOPSIS
         Returns the preference name and value of the desired preference in a Firefox configuration file.
 
-    .PARAMETER CurrentConfiguration
-        Content of the configuration file to check.
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
 
-    .PARAMETER Preference
+    .PARAMETER PreferenceName
         Name of the preference to get.
 #>
 function Get-FirefoxPreference
@@ -178,38 +178,32 @@ function Get-FirefoxPreference
     [CmdletBinding()]
     param
     (
-        [Parameter()]
-        [AllowNull()]
-        [System.Object[]]
-        $CurrentConfiguration,
+        [Parameter(Mandatory = $true)]
+        [string]
+        $InstallDirectory,
 
         [Parameter()]
         [string]
-        $Preference
+        $PreferenceName
     )
 
-    $configuration = @()
-    foreach ($line in $CurrentConfiguration)
+    $currentConfiguration = Get-Content "$InstallDirectory\Mozilla.cfg"
+    foreach ($line in $currentConfiguration)
     {
         if ($null -ne $line)
         {
-            if ($Preference)
             {
-                $match = Select-String -InputObject $line -Pattern "\w*Pref\(`"$Preference.*(?=\))"
-            }
-            else
-            {
-                $match = Select-String -InputObject $line -Pattern "\w*Pref.*(?=\))"
+                $match = Select-String -InputObject $line -Pattern "\w*Pref\(`"$PreferenceName.*(?=\))"
             }
 
             if ($null -ne $match)
             {
-                $configuration += $match.Matches.Value
+                $preference = $match.Matches.Value
             }
         }
     }
 
-    $return = Split-FirefoxPreference -Configuration $configuration
+    $return = Split-FirefoxPreference -Preference $preference
 
     return $return
 }
@@ -228,36 +222,30 @@ function Split-FirefoxPreference
     param
     (
         [Parameter(Mandatory = $true)]
-        [System.Object[]]
-        $Configuration
+        [string]
+        $Preference
     )
 
-    $return = @()
-    foreach ($config in $Configuration)
+    $prefSplit = $Preference.split('(')
+    $preferenceType = $prefSplit[0]
+    $nameValue = ($prefSplit[1]).split(',')
+    $count = $nameValue.count
+
+    if ($count -gt 2)
     {
-        $prefSplit = $config.split('(')
-        $prefType = $prefSplit[0]
-        $keyValue = ($prefSplit[1]).split(',')
-        $count = $keyValue.count
+        $preferenceName = $nameValue[1].replace('"', '')
+        $preferenceValue = ($nameValue[2..$count] -join ',').replace('"', '')
+    }
+    else
+    {
+        $preferenceName = $nameValue[0].replace('"', '')
+        $preferenceValue = $nameValue[1].replace('"', '')
+    }
 
-        if ($count -gt 2)
-        {
-            $key = $keyValue[1].replace('"', '')
-            $Value = ($keyValue[2..$count] -join ',').replace('"', '')
-        }
-        else
-        {
-            $key = $keyValue[0].replace('"', '')
-            $Value = $keyValue[1].replace('"', '')
-        }
-
-        $collection = @{
-            PrefType       = $prefType.trim()
-            PreferenceName = $key.trim()
-            Value          = $value.trim()
-        }
-
-        $return += $collection
+    $return = @{
+        PreferenceType  = $preferenceType.trim()
+        PreferenceName  = $preferenceName.trim()
+        PreferenceValue = $preferenceValue.trim()
     }
 
     return $return
@@ -265,16 +253,19 @@ function Split-FirefoxPreference
 
 <#
     .SYNOPSIS
-        Tests if a configuration matches the current preferences.
+        Test-TargetResource tests Firefox config preconfigurations and Preferences.
 
-    .PARAMETER Configuration
-        Array of preferences.
+    .PARAMETER PreferenceName
+        The name of the Firefox preference to configure.
 
-    .PARAMETER CurrentConfiguration
-        Content of the configuration file to check.
+    .PARAMETER PreferenceType
+        The type of Firefox preference to configure.
 
-    .PARAMETER Force
-        Switch to set a strict configuration.
+    .PARAMETER PreferenceValue
+        The Value of the Firefox preference to configure.
+
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
 #>
 
 function Test-FirefoxPreference
@@ -284,39 +275,41 @@ function Test-FirefoxPreference
     param
     (
         [Parameter(Mandatory = $true)]
-        [psobject]
-        $Configuration,
+        [string]
+        $PreferenceName,
 
         [Parameter(Mandatory = $true)]
-        [psobject]
-        $CurrentConfiguration,
+        [string]
+        $PreferenceType,
 
         [Parameter()]
-        [switch]
-        $Force = $false
+        [AllowNull()]
+        [string]
+        $PreferenceValue,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $InstallDirectory
     )
 
-    foreach ($config in $Configuration)
+    $currentPreference = Get-FirefoxPreference -Preference $config.PreferenceName -InstallDirectory $InstallDirectory
+    if ($null -eq $currentPreference)
     {
-        $currentPreference = Get-FirefoxPreference -CurrentConfiguration $CurrentConfiguration -Preference $config.PreferenceName
-        if ($null -eq $currentPreference)
-        {
-            Write-Verbose -Message "$Preference not found."
-            return $false
-        }
+        Write-Verbose -Message "$Preference not found."
+        return $false
+    }
 
-        $inDesiredState = $true
+    $inDesiredState = $true
 
-        if ($currentPreference.PrefType -ne $config.PrefType)
-        {
-            Write-Verbose -Message "PrefType: $PrefType does not matched desired setting for $Preference"
-            $inDesiredState = $false
-        }
-        if ($currentPreference.Value -ne $config.Value)
-        {
-            Write-Verbose -Message "Value: $Value does not matched desired setting for $Preference"
-            $inDesiredState = $false
-        }
+    if ($currentPreference.PrefType -ne $config.PrefType)
+    {
+        Write-Verbose -Message "PrefType: $PrefType does not matched desired setting for $Preference"
+        $inDesiredState = $false
+    }
+    if ($currentPreference.Value -ne $config.Value)
+    {
+        Write-Verbose -Message "Value: $Value does not matched desired setting for $Preference"
+        $inDesiredState = $false
     }
 
     return $inDesiredState
@@ -343,7 +336,7 @@ function Set-FirefoxConfiguration
     param
     (
         [Parameter()]
-        [hashtable[]]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
         $Configuration,
 
         [Parameter()]
@@ -353,50 +346,33 @@ function Set-FirefoxConfiguration
 
         [Parameter(Mandatory = $true)]
         [string]
-        $InstallDirectory,
-
-        [Parameter()]
-        [switch]
-        $Force = $false
+        $InstallDirectory
     )
 
     switch ($File)
-        {
-            'firefox'
-            {
-                $filePath = "$InstallDirectory\firefox.cfg"
-            }
-            'autoconfig'
-            {
-                $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
-            }
-        }
-
-    $preferences = $null
-    if ($Force)
     {
-        foreach ($preference in $Configuration)
+        'firefox'
         {
-            $pref = $preference.PrefType
-            $preferenceName = $preference.PreferenceName
-            $value = Format-FireFoxPreference -Value ($preference.Value)
-
-            $preferences += ('{0}("{1}", {2});' -f $pref, $preferenceName, $value) + "`n"
+            $filePath = "$InstallDirectory\Mozilla.cfg"
+        }
+        'autoconfig'
+        {
+            $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
         }
     }
-    else
+
+    $preferences = $null
+
+    $configurationContent = Get-Content -Path $filePath -ErrorAction SilentlyContinue
+    $newConfiguration = Merge-FirefoxPreference -Configuration $Configuration -ConfigurationContent $configurationContent
+
+    foreach ($preference in $newConfiguration)
     {
-        $configurationContent = Get-Content -Path $filePath -ErrorAction SilentlyContinue
-        $newConfiguration = Merge-FirefoxPreference -Configuration $Configuration -ConfigurationContent $configurationContent
+        $pref = $preference.PrefType
+        $preferenceName = $preference.PreferenceName
+        $value = Format-FireFoxPreference -Value ($preference.Value)
 
-        foreach ($preference in $newConfiguration)
-        {
-            $pref = $preference.PrefType
-            $preferenceName = $preference.PreferenceName
-            $value = Format-FireFoxPreference -Value ($preference.Value)
-
-            $preferences += ('{0}("{1}", {2});' -f $pref, $preferenceName, $value) + "`n"
-        }
+        $preferences += ('{0}("{1}", {2});' -f $pref, $preferenceName, $value) + "`n"
     }
 
     switch ($File)
@@ -420,7 +396,7 @@ function Set-FirefoxConfiguration
 <#
     .SYNOPSIS
         Formats the value of a FireFox configuration preference.
-        The FireFox.cfg file wants double quotes around words but not around bools
+        The Mozilla.cfg file wants double quotes around words but not around bools
         or intergers.
     .PARAMETER Value
         Specifies the FireFox preference value to be formated.
@@ -470,7 +446,7 @@ function Merge-FirefoxPreference
     param
     (
         [Parameter(Mandatory = $true)]
-        [hashtable[]]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
         $Configuration,
 
         [Parameter()]
@@ -505,3 +481,21 @@ function Merge-FirefoxPreference
     return $return
 }
 #endregion
+
+function ConvertTo-KeyValuePairArrayToHashtable
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [Microsoft.Management.Infrastructure.CimInstance[]]
+        $Array
+    )
+
+    $hashtable = @{}
+    foreach($item in $array)
+    {
+        $hashtable += @{$item.Key = $item.Value}
+    }
+
+    return $hashtable
+}

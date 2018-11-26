@@ -11,7 +11,7 @@ if ( (-not (Test-Path -Path (Join-Path -Path $script:moduleRoot -ChildPath 'DSCR
 }
 
 Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResource.Tests\TestHelper.psm1') -Force
-Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResources\MSFT_FirefoxConfigurationFile\FirefoxConfigurationFileHelper.psm1')
+Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResources\FirefoxConfigurationFileHelper.psm1')
 
 $TestEnvironment = Initialize-TestEnvironment `
     -DSCModuleName $script:DSCModuleName `
@@ -47,7 +47,7 @@ $firefoxPreference2 = @{
 $autoconfigPreference = @{
     PrefType       = 'lockPref'
     PreferenceName = 'general.config.filename'
-    Value          = 'firefox.cfg'
+    Value          = 'Mozilla.cfg'
 }
 # Begin Tests
 try
@@ -69,8 +69,8 @@ try
                     $result.CurrentConfiguration | Should -Be $null
                 }
             }
-            Context 'When firefox.cfg path is missing or incorrect' {
-                Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq "$mockInstallDirectory\firefox.cfg"}
+            Context 'When Mozilla.cfg path is missing or incorrect' {
+                Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq "$mockInstallDirectory\Mozilla.cfg"}
 
                 It 'Should return a null "CurrentConfiguration" and the desired "InstallDirectory"' {
                     $result = Get-TargetResource -InstallDirectory $mockInstallDirectory
@@ -78,7 +78,7 @@ try
                     $result.CurrentConfiguration | Should -Be $null
                 }
             }
-            Context 'When firefox.cfg does exist' {
+            Context 'When Mozilla.cfg does exist' {
                 Mock -CommandName Test-Path -MockWith {$true}
 
                 It 'Should return the correct preferences in the correct format' {
@@ -100,14 +100,14 @@ try
                 Mock -CommandName Test-Path -MockWith {$false}
 
                 It 'Should throw' {
-                    {Set-TargetResource -InstallDirectory $mockInstallDirectory -Configuration $firefoxPreference} | Should -Throw
+                    {Set-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceObject $firefoxPreference} | Should -Throw
                 }
             }
             Context 'When Firefox preconfigurations are not complete'{
                 Mock -CommandName Test-Path -MockWith {$true}
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {'autoconfigfile'}
 
-                Set-TargetResource -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory
+                Set-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
                 It 'Should call Set-FirefoxPreconfigs' {
                     Assert-MockCalled -CommandName 'Set-FirefoxPreconfigs' -Times 1
                 }
@@ -119,7 +119,7 @@ try
                 Mock -CommandName Test-Path -MockWith {$true}
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {}
 
-                Set-TargetResource -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory
+                Set-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
                 It 'Should not call Set-FirefoxPreconfigs' {
                     Assert-MockCalled -CommandName 'Set-FirefoxPreconfigs' -Times 0
                 }
@@ -140,7 +140,7 @@ try
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {'AutoConfigFile'}
 
                 It 'Should return False'{
-                    $result = Test-TargetResource -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory
+                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
                     $result | Should -Be $false
                 }
             }
@@ -149,11 +149,11 @@ try
                 Mock -CommandName Test-FirefoxPreference -MockWith {$false}
 
                 It 'Should return False when "Force" is set to False' {
-                    $result = Test-TargetResource -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory
+                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
                     $result | Should -Be $false
                 }
                 It 'Should return False when "Force" is set to True' {
-                    $result = Test-TargetResource -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory -Force
+                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory -Force
                     $result | Should -Be $false
                 }
             }
@@ -162,11 +162,11 @@ try
                 Mock -CommandName Test-FirefoxPreference -MockWith {$true}
 
                 It 'Should return True when "Force" is set to False' {
-                    $result = Test-TargetResource -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory
+                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
                     $result | Should -Be $true
                 }
                 It 'Should return True when "Force" is set to True' {
-                    $result = Test-TargetResource -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory -Force
+                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory -Force
                     $result | Should -Be $true
                 }
             }
@@ -215,14 +215,14 @@ try
                 $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
                 $mockPassingContent = '\\Test'
                 $mockFailingContent = 'Test'
-                Context 'When firefox.cfg starts with a comment' {
+                Context 'When Mozilla.cfg starts with a comment' {
                     Mock -CommandName Get-Content -MockWith {$mockPassingContent}
                     It 'Should return true' {
                         $result = Test-ConfigStartWithComment -InstallDirectory $mockInstallDirectory
                         $result | Should -Be $true
                     }
                 }
-                Context 'When firefox.cfg starts without a comment' {
+                Context 'When Mozilla.cfg starts without a comment' {
                     Mock -CommandName Get-Content -MockWith {$mockFailingContent}
                     It 'Should return false' {
                         $result = Test-ConfigStartWithComment -InstallDirectory $mockInstallDirectory
@@ -233,7 +233,7 @@ try
             Describe 'Set-FirefoxPreconfigs' {
                 $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
                 $autoConfigPath = "$mockInstallDirectory\defaults\pref\autoconfig.js"
-                $firefoxCfgPath = "$mockInstallDirectory\firefox.cfg"
+                $firefoxCfgPath = "$mockInstallDirectory\Mozilla.cfg"
 
                 Mock -CommandName New-Item -MockWith {}
                 Mock -CommandName Get-Content -MockWith {}
@@ -296,7 +296,7 @@ try
                         Assert-MockCalled -CommandName Set-FirefoxConfiguration -Times 1
                     }
                 }
-                Context 'When firefox.cfg does not start with a comment and file exists'{
+                Context 'When Mozilla.cfg does not start with a comment and file exists'{
                     Mock -CommandName Test-Path -MockWith {$true}
 
                     It 'Should Not throw'{
@@ -310,7 +310,7 @@ try
                         Assert-MockCalled -CommandName Set-FirefoxConfiguration -Times 0
                     }
                 }
-                Context 'When firefox.cfg does not start with a comment and file does not exist'{
+                Context 'When Mozilla.cfg does not start with a comment and file does not exist'{
                     Mock -CommandName Test-Path -MockWith {$false}
 
                     It 'Should Not throw'{
@@ -398,7 +398,7 @@ try
             }
             Describe 'Set-FirefoxConfiguration' {
                 $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
-                $firefoxPath = "$mockInstallDirectory\firefox.cfg"
+                $firefoxPath = "$mockInstallDirectory\Mozilla.cfg"
                 $autoconfigPath = "$mockInstallDirectory\defaults\pref\autoconfig.js"
                 $mergedConfiguration = @(
                     $firefoxPreference
@@ -409,7 +409,7 @@ try
                 New-Item -Path "$mockInstallDirectory\defaults" -ItemType Directory -Force
                 New-Item -Path "$mockInstallDirectory\defaults\pref" -ItemType Directory -Force
 
-                Context 'When configuring firefox.cfg and force is true with no prior configuration' {
+                Context 'When configuring Mozilla.cfg and force is true with no prior configuration' {
                     Mock -CommandName Format-FireFoxPreference -MockWith {'"Ask Every Time"'}
 
                     Set-FirefoxConfiguration -Configuration $firefoxPreference -InstallDirectory $mockInstallDirectory -Force
@@ -425,7 +425,7 @@ try
                         $content | Should -Contain 'lockPref("security.default_personal_cert", "Ask Every Time");'
                     }
                 }
-                Context 'When configuring firefox.cfg and force is true with prior configuration' {
+                Context 'When configuring Mozilla.cfg and force is true with prior configuration' {
                     Mock -CommandName Format-FireFoxPreference -MockWith {'false'}
                     Out-File -FilePath $firefoxPath -InputObject $firefoxCfg
 
@@ -442,7 +442,7 @@ try
                         $content | Should -Contain 'lockPref("network.protocol-handler.external.shell", false);'
                     }
                 }
-                Context 'When configuring firefox.cfg and force is false with prior configuration' {
+                Context 'When configuring Mozilla.cfg and force is false with prior configuration' {
                     Mock -CommandName Format-FireFoxPreference -ParameterFilter {$Value -eq 'Ask Every Time'} -MockWith {'"Ask Every Time"'}
                     Mock -CommandName Format-FireFoxPreference -ParameterFilter {$Value -eq 'false'} -MockWith {'false'}
                     Mock -CommandName Merge-FirefoxPreference -MockWith {$mergedConfiguration}
@@ -463,7 +463,7 @@ try
                     }
                 }
                 Context 'When configuring autoconfig.js' {
-                    Mock -CommandName Format-FireFoxPreference -MockWith {'"firefox.cfg"'}
+                    Mock -CommandName Format-FireFoxPreference -MockWith {'"Mozilla.cfg"'}
                     Mock -CommandName Merge-FirefoxPreference -MockWith {$autoconfigpreference}
 
                     Set-FirefoxConfiguration -Configuration $autoconfigpreference -InstallDirectory $mockInstallDirectory -File 'autoconfig'
@@ -476,7 +476,7 @@ try
                         $content.Count | Should -Be 2
                     }
                     It 'Should contain defined preference' {
-                        $content | Should -Contain 'lockPref("general.config.filename", "firefox.cfg");'
+                        $content | Should -Contain 'lockPref("general.config.filename", "Mozilla.cfg");'
                     }
                 }
             }

@@ -30,7 +30,7 @@ Copyright = '(c) 2014 Microsoft. All rights reserved.'
 Description = 'Firefox Main module'
 
 # Minimum version of the Windows PowerShell engine required by this module
-PowerShellVersion = '4.0'
+PowerShellVersion = '5.1'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
@@ -51,7 +51,7 @@ PowerShellVersion = '4.0'
 RequiredModules = @( 'xPSDesiredStateConfiguration' )
 
 # Assemblies that must be loaded prior to importing this module
-# RequiredAssemblies = @()
+RequiredAssemblies = @()
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
@@ -120,6 +120,3 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
-
-
-
