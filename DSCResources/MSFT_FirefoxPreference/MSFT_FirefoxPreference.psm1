@@ -28,7 +28,7 @@ function Get-TargetResource
 
     if (-not(Test-Path -Path $InstallDirectory))
     {
-        Write-Warning "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
+        Write-Verbose -Message "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
     }
     elseif (Test-Path -Path "$InstallDirectory\Mozilla.cfg")
     {
@@ -36,13 +36,13 @@ function Get-TargetResource
     }
     else
     {
-        Write-Warning -Message "No Mozilla.cfg file found"
+        Write-Verbose -Message "No Mozilla.cfg file found"
     }
 
     $return = @{
-        PreferenceType   = $currentPreference.Type
+        PreferenceType   = $currentPreference.PreferenceType
         PreferenceName   = $currentPreference.PreferenceName
-        PreferenceValue  = $currentPreference.Value
+        PreferenceValue  = $currentPreference.PreferenceValue
         InstallDirectory = $InstallDirectory
     }
 
@@ -150,7 +150,7 @@ function Test-TargetResource
         return $false
     }
 
-    $inDesiredState = Test-FirefoxPreference -PreferenceName $PreferenceName -PreferenceType $PreferenceType -PreferenceValue $PreferenceValue -InstallDirectory $InstallDirectory
+    $inDesiredState = Test-FirefoxPreference -PreferenceName $PreferenceName -PreferenceType $PreferenceType -PreferenceValue $PreferenceValue -InstallDirectory $InstallDirectory -File 'Mozilla'
 
     return $inDesiredState
 }

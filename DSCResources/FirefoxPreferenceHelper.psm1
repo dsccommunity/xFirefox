@@ -23,7 +23,7 @@ function Test-FirefoxPreconfiguration
         PreferenceName   = 'general.config.filename'
         PreferenceValue  = 'Mozilla.cfg'
         InstallDirectory = $InstallDirectory
-        $File            = 'Autoconfig'
+        File            = 'Autoconfig'
     }
 
     $obscureValueParam = @{
@@ -31,22 +31,22 @@ function Test-FirefoxPreconfiguration
         PreferenceName   = 'general.config.obscure_value'
         PreferenceValue  = '0'
         InstallDirectory = $InstallDirectory
-        $File            = 'Autoconfig'
+        File            = 'Autoconfig'
     }
 
     if(-not(Test-FirefoxPreference @fileNameParam))
     {
-        Write-Warning -Message 'Firefox "GeneralConfigurationFile" preference not set to Mozilla.cfg'
+        Write-Verbose -Message 'Firefox "GeneralConfigurationFile" preference not set to Mozilla.cfg'
         $return += 'filename'
     }
     if (-not(Test-FirefoxPreference @obscureValueParam))
     {
-        Write-Warning -Message 'Firefox "DoNotObscure" preference is incorrect'
+        Write-Verbose -Message 'Firefox "DoNotObscure" preference is incorrect'
         $return += 'obscurevalue'
     }
     if (-not(Test-ConfigStartWithComment -InstallDirectory $InstallDirectory))
     {
-        Write-Warning -Message 'Mozilla.cfg does not begin with a commented line and will ignore any preference in the first line'
+        Write-Verbose -Message 'Mozilla.cfg does not begin with a commented line and will ignore any preference in the first line'
         $return += 'comment'
     }
     else
@@ -111,9 +111,10 @@ function Set-FirefoxPreconfigs
         $InstallDirectory
     )
 
-    $autoConfigPath = "$InstallDirectory\defaults\pref\autoconfig.js"
-    $firefoxCfgPath = "$InstallDirectory\Mozilla.cfg"
-    $config = @()
+    if (-not(Test-Path -Path "$InstallDirectory\defaults\pref\autoconfig.js"))
+    {
+        New-Item -Path $autoConfigPath -Type File
+    }
 
     foreach ($item in $Preconfigs)
     {
@@ -121,47 +122,13 @@ function Set-FirefoxPreconfigs
         {
             'filename'
             {
-                $fileNameCollection = @{
-                    PrefType       = 'lockPref'
-                    PreferenceName = 'general.config.filename'
-                    Value          = 'Mozilla.cfg'
-                }
-
-                $config += $fileNameCollection
+                Set-FirefoxPreference -PreferenceName'lockPref' -PreferenceType 'general.config.filename' -PreferenceValue 'Mozilla.cfg' -InstallDirectory $InstallDirectory -File 'Autoconfig'
             }
             'obscurevalue'
             {
-                $fileNameCollection = @{
-                    PrefType       = 'lockPref'
-                    PreferenceName = 'general.config.obscure_value'
-                    Value          = '0'
-                }
-
-                $config += $fileNameCollection
-            }
-            'comment'
-            {
-                if (-not(Test-Path -Path $firefoxCfgPath))
-                {
-                    New-Item -Path $firefoxCfgPath -Type File
-                }
-
-                $cfgContent = Get-Content -Path $firefoxCfgPath
-                $addcomment = '// FireFox preference file' + "`r" + $cfgContent
-
-                Out-File -FilePath $firefoxCfgPath -InputObject $addcomment
+                Set-FirefoxPreference -PreferenceName'lockPref' -PreferenceType 'general.config.obscure_value' -PreferenceValue '0' -InstallDirectory $InstallDirectory -File 'Autoconfig'
             }
         }
-    }
-
-    if ($config)
-    {
-        if (-not(Test-Path -Path $autoConfigPath))
-        {
-            New-Item -Path $autoConfigPath -Type File
-        }
-
-        Set-FirefoxConfiguration -Configuration $config -File 'autoconfig' -InstallDirectory $InstallDirectory
     }
 }
 #endregion
@@ -370,7 +337,7 @@ function Test-FirefoxPreference
     .PARAMETER Force
         Switch to set a strict configuration.
 #>
-function Set-FirefoxPreferece
+function Set-FirefoxPreference
 {
     [CmdletBinding()]
     param

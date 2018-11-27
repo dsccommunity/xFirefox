@@ -1,5 +1,5 @@
 $Script:DSCModuleName = 'xFirefox'
-$Script:DSCResourceName = 'MSFT_FirefoxConfigurationFile'
+$Script:DSCResourceName = 'MSFT_FirefoxPreference'
 #region Header
 #Unit Test Template Version: 1.0.0
 
@@ -11,7 +11,7 @@ if ( (-not (Test-Path -Path (Join-Path -Path $script:moduleRoot -ChildPath 'DSCR
 }
 
 Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResource.Tests\TestHelper.psm1') -Force
-Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResources\FirefoxConfigurationFileHelper.psm1')
+Import-Module -Name (Join-Path -Path $script:moduleRoot -ChildPath 'DscResources\FirefoxPreferenceHelper.psm1')
 
 $TestEnvironment = Initialize-TestEnvironment `
     -DSCModuleName $script:DSCModuleName `
@@ -24,30 +24,24 @@ $TestEnvironment = Initialize-TestEnvironment `
     '// FireFox preference file'
     'lockPref("security.default_personal_cert", "Ask Every Time");'
 )
-
-$namespace = 'root/Microsoft/Windows/DesiredStateConfiguration'
-$mockCurrentPref = New-CimInstance -Namespace $namespace -ClientOnly -ClassName PreferenceObject -Property @{
-        PrefType       = 'lockPref'
-        PreferenceName = 'security.default_personal_cert'
-        Value          = 'Ask Every Time'
-}
-
 $firefoxPreference = @{
-    PrefType       = 'lockPref'
-    PreferenceName = 'security.default_personal_cert'
-    Value          = 'Ask Every Time'
+    PreferenceType   = 'lockPref'
+    PreferenceName   = 'security.default_personal_cert'
+    PreferenceValue  = 'Ask Every Time'
+    InstallDirectory = ''
 }
 
 $firefoxPreference2 = @{
-    PrefType       = 'lockPref'
-    PreferenceName = 'network.protocol-handler.external.shell'
-    Value          = 'false'
+    PreferenceType  = 'lockPref'
+    PreferenceName  = 'network.protocol-handler.external.shell'
+    PreferenceValue = 'false'
+    InstallDirectory = ''
 }
 
 $autoconfigPreference = @{
-    PrefType       = 'lockPref'
-    PreferenceName = 'general.config.filename'
-    Value          = 'Mozilla.cfg'
+    PreferenceType  = 'lockPref'
+    PreferenceName  = 'general.config.filename'
+    InstallDirectory = ''
 }
 # Begin Tests
 try
@@ -58,13 +52,12 @@ try
 
             Mock -CommandName Get-Content -MockWith {$firefoxcfg}
             Mock -CommandName Get-FirefoxPreference -MockWith {$firefoxPreference}
-            Mock -CommandName New-CimInstance -MockWith {$mockCurrentPref}
 
             Context 'When Firefox InstallDirectory is missing or incorrect'{
                 Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq $mockInstallDirectory}
 
                 It 'Should return a null "CurrentConfiguration" and the desired "InstallDirectory"'{
-                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory
+                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceName $firefoxPreference.PreferenceName
                     $result.InstallDirectory | Should -Be $mockInstallDirectory
                     $result.CurrentConfiguration | Should -Be $null
                 }
@@ -73,7 +66,7 @@ try
                 Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq "$mockInstallDirectory\Mozilla.cfg"}
 
                 It 'Should return a null "CurrentConfiguration" and the desired "InstallDirectory"' {
-                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory
+                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceName $firefoxPreference.PreferenceName
                     $result.InstallDirectory | Should -Be $mockInstallDirectory
                     $result.CurrentConfiguration | Should -Be $null
                 }
@@ -82,78 +75,78 @@ try
                 Mock -CommandName Test-Path -MockWith {$true}
 
                 It 'Should return the correct preferences in the correct format' {
-                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory
+                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceName $firefoxPreference.PreferenceName
                     $result.InstallDirectory | Should -Be $mockInstallDirectory
-                    $result.CurrentConfiguration.PrefType | Should -Be $mockCurrentPref.PrefType
-                    $result.CurrentConfiguration.PreferenceName | Should -Be $mockCurrentPref.PreferenceName
-                    $result.CurrentConfiguration.Value | Should -Be $mockCurrentPref.Value
+                    $result.PreferenceType | Should -Be $firefoxPreference.PreferenceType
+                    $result.PreferenceName | Should -Be $firefoxPreference.PreferenceName
+                    $result.PreferenceValue | Should -Be $firefoxPreference.PreferenceValue
                 }
             }
         }
 
         Describe 'Set-DscResource'{
             $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
+            $firefoxPreference.InstallDirectory = $mockInstallDirectory
             Mock -CommandName Set-FirefoxPreconfigs -MockWith {}
-            Mock -CommandName Set-FirefoxConfiguration -MockWith {}
+            Mock -CommandName Set-FirefoxPreference -MockWith {}
 
             Context 'When The Install Directory Path is incorrect.'{
                 Mock -CommandName Test-Path -MockWith {$false}
 
                 It 'Should throw' {
-                    {Set-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceObject $firefoxPreference} | Should -Throw
+                    {Set-TargetResource @firefoxPreference} | Should -Throw
                 }
             }
             Context 'When Firefox preconfigurations are not complete'{
                 Mock -CommandName Test-Path -MockWith {$true}
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {'autoconfigfile'}
 
-                Set-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
+                Set-TargetResource @firefoxPreference
                 It 'Should call Set-FirefoxPreconfigs' {
                     Assert-MockCalled -CommandName 'Set-FirefoxPreconfigs' -Times 1
                 }
                 It 'Should call Set-FirefoxConfiguration' {
-                    Assert-MockCalled -CommandName 'Set-FirefoxConfiguration' -Times 1
+                    Assert-MockCalled -CommandName 'Set-FirefoxPreference' -Times 1
                 }
             }
             Context 'When Firefox preconfigurations are complete'{
                 Mock -CommandName Test-Path -MockWith {$true}
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {}
 
-                Set-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
+                Set-TargetResource @firefoxPreference
                 It 'Should not call Set-FirefoxPreconfigs' {
                     Assert-MockCalled -CommandName 'Set-FirefoxPreconfigs' -Times 0
                 }
-                It 'Should call Set-FirefoxConfiguration' {
-                    Assert-MockCalled -CommandName 'Set-FirefoxConfiguration' -Times 1
+                It 'Should call Set-FirefoxPreference' {
+                    Assert-MockCalled -CommandName 'Set-FirefoxPreference' -Times 1
                 }
             }
         }
 
         Describe 'Test-DscResource'{
             $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
-            $mockGetReturn = @{
-                CurrentConfiguration = $mockCurrentPref
-                InstallDirectory     = $mockInstallDirectory
-            }
-            Mock -CommandName Get-TargetResource -MockWith {$mockGetReturn}
+            $firefoxPreference.InstallDirectory = $mockInstallDirectory
+            Mock -CommandName Get-TargetResource -MockWith {$firefoxPreference}
             Context 'When Firefox Preconfigurations are not complete'{
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {'AutoConfigFile'}
+                Mock -CommandName Test-FirefoxPreference -MockWith {$true}
 
+                $result = Test-TargetResource @firefoxPreference
                 It 'Should return False'{
-                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
+                    $result = Test-TargetResource @firefoxPreference
                     $result | Should -Be $false
+                }
+                It ' Should not call "Test-FirefoxPreference"' {
+                    Assert-MockCalled -CommandName Test-FirefoxPreconfiguration -Times 1
+                    Assert-MockCalled -CommandName Test-FirefoxPreference -Times 0
                 }
             }
             Context 'When Firefox preferences are incorrect' {
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {}
                 Mock -CommandName Test-FirefoxPreference -MockWith {$false}
 
-                It 'Should return False when "Force" is set to False' {
-                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
-                    $result | Should -Be $false
-                }
-                It 'Should return False when "Force" is set to True' {
-                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory -Force
+                It 'Should return False' {
+                    $result = Test-TargetResource @firefoxPreference
                     $result | Should -Be $false
                 }
             }
@@ -161,22 +154,18 @@ try
                 Mock -CommandName Test-FirefoxPreconfiguration -MockWith {}
                 Mock -CommandName Test-FirefoxPreference -MockWith {$true}
 
-                It 'Should return True when "Force" is set to False' {
-                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory
-                    $result | Should -Be $true
-                }
-                It 'Should return True when "Force" is set to True' {
-                    $result = Test-TargetResource -PreferenceObject $firefoxPreference -InstallDirectory $mockInstallDirectory -Force
+                It 'Should return True' {
+                    $result = Test-TargetResource @firefoxPreference
                     $result | Should -Be $true
                 }
             }
         }
 
         #region helper function
-        InModuleScope FirefoxConfigurationFileHelper {
+        InModuleScope FirefoxPreferenceHelper {
             Describe 'Test-FirefoxPreconfiguration' {
                 $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
-                Mock -CommandName Get-Content -MockWith {$firefoxPreference}
+                Mock -CommandName Get-Content -MockWith {$firefoxcfg}
                 Context 'When all preconfigs are incorrect' {
                     Mock -CommandName Test-FirefoxPreference -MockWith {$false}
                     Mock -CommandName Test-ConfigStartWithComment -MockWith {$false}
@@ -331,17 +320,17 @@ try
                 Context 'When no "Preference" is defined' {
                     It 'Should return the correct object'{
                         $result = Get-FirefoxPreference -CurrentConfiguration $firefoxcfg
-                        $result.PrefType | Should -Be 'lockPref'
+                        $result.PreferenceType | Should -Be 'lockPref'
                         $result.PreferenceName | Should -Be 'security.default_personal_cert'
-                        $result.Value | Should -Be 'Ask Every Time'
+                        $result.PreferenceValue | Should -Be 'Ask Every Time'
                     }
                 }
                 Context 'When "Preference" is defined' {
                     It 'Should return the correct object'{
                         $result = Get-FirefoxPreference -CurrentConfiguration $firefoxcfg -Preference 'security.default_personal_cert'
-                        $result.PrefType | Should -Be 'lockPref'
+                        $result.PreferenceType | Should -Be 'lockPref'
                         $result.PreferenceName | Should -Be 'security.default_personal_cert'
-                        $result.Value | Should -Be 'Ask Every Time'
+                        $result.PreferenceValue | Should -Be 'Ask Every Time'
                     }
                 }
             }
@@ -349,22 +338,22 @@ try
                 $result = Split-FirefoxPreference -Configuration 'lockPref("security.default_personal_cert", "Ask Every Time"'
 
                 It 'Should return a correctly split object'{
-                    $result.PrefType | Should -Be 'lockPref'
+                    $result.PreferenceType | Should -Be 'lockPref'
                     $result.PreferenceName | Should -Be 'security.default_personal_cert'
-                    $result.Value | Should -Be 'Ask Every Time'
+                    $result.PreferenceValue | Should -Be 'Ask Every Time'
                 }
             }
             Describe 'Test-FirefoxPreference' {
-                $mockPrefTypeDifference = @{
-                    PrefType       = 'Pref'
+                $mockPreferenceTypeDifference = @{
+                    PreferenceType       = 'Pref'
                     PreferenceName = 'security.default_personal_cert'
-                    Value          = 'Ask Every Time'
+                    PreferenceValue          = 'Ask Every Time'
                 }
 
                 $mockValueDifference = @{
-                    PrefType       = 'Pref'
+                    PreferenceType       = 'Pref'
                     PreferenceName = 'security.default_personal_cert'
-                    Value          = 'Do not ask'
+                    PreferenceValue          = 'Do not ask'
                 }
 
                 Context 'When Firefox preference does not exist.' {
@@ -384,11 +373,11 @@ try
                 Context 'When Firefox exists and PreferenceType does not match.' {
                     Mock -CommandName Get-FirefoxPreference -MockWith {$firefoxPreference}
                     It 'Should return False' {
-                        $result = Test-FirefoxPreference -Configuration $mockPrefTypeDifference -CurrentConfiguration $mockCurrentPref
+                        $result = Test-FirefoxPreference -Configuration $mockPreferenceTypeDifference -CurrentConfiguration $mockCurrentPref
                         $result | Should -Be $false
                     }
                 }
-                Context 'When Firefox exists and Value does not match.' {
+                Context 'When Firefox exists and PreferenceValue does not match.' {
                     Mock -CommandName Get-FirefoxPreference -MockWith {$firefoxPreference}
                     It 'Should return False' {
                         $result = Test-FirefoxPreference -Configuration $mockValueDifference -CurrentConfiguration $mockCurrentPref
@@ -443,8 +432,8 @@ try
                     }
                 }
                 Context 'When configuring Mozilla.cfg and force is false with prior configuration' {
-                    Mock -CommandName Format-FireFoxPreference -ParameterFilter {$Value -eq 'Ask Every Time'} -MockWith {'"Ask Every Time"'}
-                    Mock -CommandName Format-FireFoxPreference -ParameterFilter {$Value -eq 'false'} -MockWith {'false'}
+                    Mock -CommandName Format-FireFoxPreference -ParameterFilter {$PreferenceValue -eq 'Ask Every Time'} -MockWith {'"Ask Every Time"'}
+                    Mock -CommandName Format-FireFoxPreference -ParameterFilter {$PreferenceValue -eq 'false'} -MockWith {'false'}
                     Mock -CommandName Merge-FirefoxPreference -MockWith {$mergedConfiguration}
                     Out-File -FilePath $firefoxPath -InputObject $firefoxCfg
 
@@ -508,9 +497,9 @@ try
                     }
                     It 'Should return the supplied configuration' {
                         $result = Merge-FirefoxPreference -Configuration $firefoxPreference
-                        $result.PrefType | Should -Be 'lockPref'
+                        $result.PreferenceType | Should -Be 'lockPref'
                         $result.PreferenceName | Should -Be 'security.default_personal_cert'
-                        $result.Value | Should -Be 'Ask Every Time'
+                        $result.PreferenceValue | Should -Be 'Ask Every Time'
                     }
                 }
                 Context 'When current configuration exists and matches supplied configuration' {
@@ -520,14 +509,14 @@ try
                         {Merge-FirefoxPreference -Configuration $firefoxPreference} | Should -Not -Throw
                     }
                     It 'Should return the supplied configuration' {
-                        $result.PrefType | Should -Be 'lockPref'
+                        $result.PreferenceType | Should -Be 'lockPref'
                         $result.PreferenceName | Should -Be 'security.default_personal_cert'
-                        $result.Value | Should -Be 'Ask Every Time'
+                        $result.PreferenceValue | Should -Be 'Ask Every Time'
                     }
                     It 'Should not have duplicates' {
-                        $result.PrefType.Count | Should -Be 1
+                        $result.PreferenceType.Count | Should -Be 1
                         $result.PreferenceName.Count | Should -Be 1
-                        $result.Value.Count | Should -Be 1
+                        $result.PreferenceValue.Count | Should -Be 1
                     }
                 }
                 Context 'When current configuration exists and does not match supplied configuration' {
@@ -537,16 +526,16 @@ try
                         {Merge-FirefoxPreference -Configuration $firefoxPreference2} | Should -Not -Throw
                     }
                     It 'Should have multiple values' {
-                        $result.PrefType.Count | Should -Be 2
+                        $result.PreferenceType.Count | Should -Be 2
                         $result.PreferenceName.Count | Should -Be 2
-                        $result.Value.Count | Should -Be 2
+                        $result.PreferenceValue.Count | Should -Be 2
                     }
                     It 'Should have correct configuration' {
-                        $result.PrefType | Should -Contain 'lockPref'
+                        $result.PreferenceType | Should -Contain 'lockPref'
                         $result.PreferenceName | Should -Contain 'security.default_personal_cert'
-                        $result.Value | Should -Contain 'Ask Every Time'
+                        $result.PreferenceValue | Should -Contain 'Ask Every Time'
                         $result.PreferenceName | Should -Contain 'network.protocol-handler.external.shell'
-                        $result.Value | Should -Contain 'false'
+                        $result.PreferenceValue | Should -Contain 'false'
                     }
                 }
             }
