@@ -1,5 +1,5 @@
 $Script:DSCModuleName = 'xFirefox'
-$Script:DSCResourceName = 'MSFT_FirefoxPreference'
+$Script:DSCResourceName = 'MSFT_xFirefoxPreference'
 #region Header
 #Unit Test Template Version: 1.0.0
 

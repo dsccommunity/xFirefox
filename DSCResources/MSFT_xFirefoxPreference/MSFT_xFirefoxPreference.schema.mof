@@ -1,5 +1,5 @@
-[ClassVersion("1.0.0.0"), FriendlyName("FirefoxPreference")]
-class MSFT_FirefoxPreference : OMI_BaseResource
+[ClassVersion("1.0.0.0"), FriendlyName("xFirefoxPreference")]
+class MSFT_xFirefoxPreference : OMI_BaseResource
 {
     [Key, Description("Specifies the name of the Firefox Preference to be configured.")] String PreferenceName;
     [Write, Description("Specifies the preference type of the Firefox Preference to be configured.")] String PreferenceType;
