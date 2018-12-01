@@ -185,7 +185,7 @@ function Get-FirefoxPreference
             }
             else
             {
-                $match = Select-String -InputObject $line -Pattern '\*Pref\(.*(?=\))'
+                $match = Select-String -InputObject $line -Pattern '\w*Pref\(.*(?=\))'
             }
             if ($null -ne $match)
             {
@@ -308,12 +308,12 @@ function Test-FirefoxPreference
 
     $inDesiredState = $true
 
-    if ($currentPreference.PrefType -ne $config.PrefType)
+    if ($currentPreference.PreferenceType -ne $PreferenceType)
     {
         Write-Verbose -Message "PrefType: $PrefType does not matched desired setting for $PreferenceName"
         $inDesiredState = $false
     }
-    if ($currentPreference.Value -ne $config.Value)
+    if ($currentPreference.PreferenceValue -ne $PreferenceValue)
     {
         Write-Verbose -Message "Value: $Value does not matched desired setting for $PreferenceName"
         $inDesiredState = $false
@@ -356,8 +356,8 @@ function Set-FirefoxPreference
         $PreferenceValue,
 
         [Parameter()]
-        [string]
         [ValidateSet('Autoconfig', 'Mozilla')]
+        [string]
         $File = 'Mozilla',
 
         [Parameter(Mandatory = $true)]
@@ -380,13 +380,13 @@ function Set-FirefoxPreference
     $preferences = $null
 
     $configurationContent = Get-Content -Path $filePath -ErrorAction SilentlyContinue
-    $newConfiguration = Merge-FirefoxPreference -PreferenceType $PreferenceType -PreferenceName $PreferenceName -PreferenceValue $PreferenceValue -ConfigurationContent $configurationContent
+    $newConfiguration = Merge-FirefoxPreference -PreferenceType $PreferenceType -PreferenceName $PreferenceName -PreferenceValue $PreferenceValue -ConfigurationContent $configurationContent -InstallDirectory $InstallDirectory -File $File
 
     foreach ($preference in $newConfiguration)
     {
-        $pref = $preference.PrefType
+        $pref = $preference.PreferenceType
         $preferenceName = $preference.PreferenceName
-        $value = Format-FireFoxPreference -Value ($preference.Value)
+        $value = Format-FireFoxPreference -Value ($preference.PreferenceValue)
 
         $preferences += ('{0}("{1}", {2});' -f $pref, $preferenceName, $value) + "`n"
     }
@@ -397,14 +397,14 @@ function Set-FirefoxPreference
         {
             ForEach-Object -InputObject $File -Process {
                 "\\Firefox preference file `n"
-                ($preferences -split "`n")
-            } | Out-file -FilePath $filePath
+                "$preferences"
+            } | Out-file -FilePath $filePath -Force -NoNewline
         }
         'Autoconfig'
         {
             ForEach-Object -InputObject $File -Process {
-                ($preferences -split "`n")
-            } | Out-file -FilePath $filePath
+                "$preferences"
+            } | Out-file -FilePath $filePath -Force -NoNewline
         }
     }
 }
@@ -474,14 +474,23 @@ function Merge-FirefoxPreference
         [string]
         $PreferenceValue,
 
+        [Parameter(Mandatory = $true)]
+        [string]
+        $InstallDirectory,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('Mozilla', 'Autoconfig')]
+        [string]
+        $File,
+
         [Parameter()]
         [AllowNull()]
         [psobject]
         $ConfigurationContent
     )
-
-    $preferences = Get-FirefoxPreference -CurrentConfiguration $ConfigurationContent
-    $return = $preferences | Where-Object -FilterScript {$_.PreferenceName -ne $PreferenceName}
+    $return = @()
+    $preferences = Get-FirefoxPreference -PreferenceName $PreferenceName -InstallDirectory $InstallDirectory -File $File
+    $return += $preferences | Where-Object -FilterScript {$_.PreferenceName -ne $PreferenceName}
 
     $return += @{
         PreferenceType  = $PreferenceType
