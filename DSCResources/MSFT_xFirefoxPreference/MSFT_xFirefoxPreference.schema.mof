@@ -2,7 +2,7 @@
 class MSFT_xFirefoxPreference : OMI_BaseResource
 {
     [Key, Description("Specifies the name of the Firefox Preference to be configured.")] String PreferenceName;
-    [Write, Description("Specifies the preference type of the Firefox Preference to be configured.")] String PreferenceType;
-    [Write, Description("Specifies value of the Firefox Preference to be configured.")ValueMap{"Pref", "lockPref", "defaultPref", "unlockPref", "clearPref"}, Value{"Pref", "lockPref", "defaultPref", "unlockPref", "clearPref"}] String PreferenceValue;
+    [Write, Description("Specifies the preference type of the Firefox Preference to be configured."),ValueMap{"Pref", "lockPref", "defaultPref", "unlockPref", "clearPref"}, Values{"Pref", "lockPref", "defaultPref", "unlockPref", "clearPref"}] String PreferenceType;
+    [Write, Description("Specifies value of the Firefox Preference to be configured.")] String PreferenceValue;
     [Write, Description("Specifies the directory where Firefox is installed")] String InstallDirectory;
 };

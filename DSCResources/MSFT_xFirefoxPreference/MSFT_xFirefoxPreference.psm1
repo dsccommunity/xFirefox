@@ -32,7 +32,7 @@ function Get-TargetResource
     }
     elseif (Test-Path -Path "$InstallDirectory\Mozilla.cfg")
     {
-        $currentPreference = Get-FirefoxPreference -PreferenceName $PreferenceName -InstallDirectory $InstallDirectory -FIle 'Mozilla'
+        $currentPreference = Get-FirefoxPreference -PreferenceName $PreferenceName -InstallDirectory $InstallDirectory -File 'Mozilla'
     }
     else
     {
@@ -97,6 +97,11 @@ function Set-TargetResource
     if ($preconfigs)
     {
         Set-FirefoxPreconfigs -Preconfigs $preconfigs -InstallDirectory $InstallDirectory
+    }
+
+    if (-not(Test-Path -Path "$InstallDirectory\Mozilla.cfg"))
+    {
+        New-Item -Path "$InstallDirectory\Mozilla.cfg" -Type File
     }
 
     Set-FirefoxPreference -PreferenceName $PreferenceName -PreferenceType $PreferenceType -PreferenceValue $PreferenceValue -InstallDirectory $InstallDirectory -File 'Mozilla'

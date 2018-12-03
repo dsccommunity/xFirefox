@@ -310,12 +310,23 @@ try
                 }
             }
             Describe 'Split-FirefoxPreference' {
-                $result = Split-FirefoxPreference -Preference 'lockPref("security.default_personal_cert", "Ask Every Time"'
+                Context 'When there is one Preference Value'{
+                    $result = Split-FirefoxPreference -Preference 'lockPref("security.default_personal_cert", "Ask Every Time"'
 
-                It 'Should return a correctly split object'{
-                    $result.PreferenceType | Should -Be 'lockPref'
-                    $result.PreferenceName | Should -Be 'security.default_personal_cert'
-                    $result.PreferenceValue | Should -Be 'Ask Every Time'
+                    It 'Should return a correctly split object'{
+                        $result.PreferenceType | Should -Be 'lockPref'
+                        $result.PreferenceName | Should -Be 'security.default_personal_cert'
+                        $result.PreferenceValue | Should -Be 'Ask Every Time'
+                    }
+                }
+                Context 'When there are multiple Preference Values'{
+                    $result = Split-FirefoxPreference -Preference 'lockPref("plugin.disable_full_page_plugin_for_types", "PDF,FDF,XFDF,LSL,LSO,LSS"'
+
+                    It 'Should return a correctly split object'{
+                        $result.PreferenceType | Should -Be 'lockPref'
+                        $result.PreferenceName | Should -Be 'plugin.disable_full_page_plugin_for_types'
+                        $result.PreferenceValue | Should -Be 'PDF,FDF,XFDF,LSL,LSO,LSS'
+                    }
                 }
             }
             Describe 'Test-FirefoxPreference' {

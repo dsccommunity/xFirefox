@@ -19,15 +19,15 @@ function Test-FirefoxPreconfiguration
 
     $return = @()
     $fileNameParam = @{
-        PreferenceType   = 'prefLock'
+        PreferenceType   = 'lockPref'
         PreferenceName   = 'general.config.filename'
         PreferenceValue  = 'Mozilla.cfg'
         InstallDirectory = $InstallDirectory
-        File            = 'Autoconfig'
+        File             = 'Autoconfig'
     }
 
     $obscureValueParam = @{
-        PreferenceType   = 'prefLock'
+        PreferenceType   = 'lockPref'
         PreferenceName   = 'general.config.obscure_value'
         PreferenceValue  = '0'
         InstallDirectory = $InstallDirectory
@@ -49,7 +49,7 @@ function Test-FirefoxPreconfiguration
         Write-Verbose -Message 'Mozilla.cfg does not begin with a commented line and will ignore any preference in the first line'
         $return += 'comment'
     }
-    else
+    if ($null -eq $return)
     {
         Write-Verbose -Message 'Firefox preconfiguration requirements are correct'
     }
@@ -75,7 +75,7 @@ function Test-ConfigStartWithComment
         $InstallDirectory
     )
 
-    $configContent = Get-Content -Path "$InstallDirectory\Mozilla.cfg"
+    $configContent = Get-Content -Path "$InstallDirectory\Mozilla.cfg" -ErrorAction SilentlyContinue
 
     if (($configContent | Select-Object -First 1) -notmatch '^\\\\')
     {
@@ -122,11 +122,13 @@ function Set-FirefoxPreconfigs
         {
             'filename'
             {
-                Set-FirefoxPreference -PreferenceName'lockPref' -PreferenceType 'general.config.filename' -PreferenceValue 'Mozilla.cfg' -InstallDirectory $InstallDirectory -File 'Autoconfig'
+                Set-FirefoxPreference -PreferenceType 'lockPref' -PreferenceName 'general.config.filename' -PreferenceValue 'Mozilla.cfg' -InstallDirectory $InstallDirectory -File 'Autoconfig'
+                break
             }
             'obscurevalue'
             {
-                Set-FirefoxPreference -PreferenceName'lockPref' -PreferenceType 'general.config.obscure_value' -PreferenceValue '0' -InstallDirectory $InstallDirectory -File 'Autoconfig'
+                Set-FirefoxPreference -PreferenceType 'lockPref' -PreferenceName 'general.config.obscure_value' -PreferenceValue '0' -InstallDirectory $InstallDirectory -File 'Autoconfig'
+                break
             }
         }
     }
@@ -142,6 +144,9 @@ function Set-FirefoxPreconfigs
 
     .PARAMETER PreferenceName
         Name of the preference to get.
+
+    .PARAMETER File
+        The file name to update
 #>
 function Get-FirefoxPreference
 {
@@ -166,11 +171,13 @@ function Get-FirefoxPreference
     {
         'Mozilla'
         {
-            $currentConfiguration = Get-Content "$InstallDirectory\Mozilla.cfg"
+            $currentConfiguration = Get-Content "$InstallDirectory\Mozilla.cfg" -ErrorAction SilentlyContinue
+            break
         }
         'Autoconfig'
         {
-            $currentConfiguration = Get-Content "$InstallDirectory\defaults\pref\autoconfig.js"
+            $currentConfiguration = Get-Content "$InstallDirectory\defaults\pref\autoconfig.js" -ErrorAction SilentlyContinue
+            break
         }
     }
 
@@ -194,7 +201,7 @@ function Get-FirefoxPreference
         }
     }
 
-    if ($null -ne $preferences)
+    if ($preferences.count -gt 0)
     {
         $return = @()
         foreach ($preference in $preferences)
@@ -214,8 +221,8 @@ function Get-FirefoxPreference
     .SYNOPSIS
         Returns the preference name and value in a hashtable.
 
-    .PARAMETER Configuration
-        Array of preferences to split.
+    .PARAMETER Preference
+        Preference to split.
 #>
 function Split-FirefoxPreference
 {
@@ -235,8 +242,8 @@ function Split-FirefoxPreference
 
     if ($count -gt 2)
     {
-        $preferenceName = $nameValue[1].replace('"', '')
-        $preferenceValue = ($nameValue[2..$count] -join ',').replace('"', '')
+        $preferenceName = $nameValue[0].replace('"', '')
+        $preferenceValue = ($nameValue[1..($count - 1)] -join ',').replace('"', '')
     }
     else
     {
@@ -268,6 +275,9 @@ function Split-FirefoxPreference
 
     .PARAMETER InstallDirectory
         The directory where Firefox is installed.
+
+    .PARAMETER File
+        The file name to update
 #>
 
 function Test-FirefoxPreference
@@ -328,14 +338,20 @@ function Test-FirefoxPreference
     .SYNOPSIS
         Writes the preferences to the appropriate file.
 
-    .PARAMETER File
-        States which file to configure.
+    .PARAMETER PreferenceName
+        The name of the Firefox preference to configure.
+
+    .PARAMETER PreferenceType
+        The type of Firefox preference to configure.
+
+    .PARAMETER PreferenceValue
+        The Value of the Firefox preference to configure.
 
     .PARAMETER InstallDirectory
         The directory where Firefox is installed.
 
-    .PARAMETER Force
-        Switch to set a strict configuration.
+    .PARAMETER File
+        The file name to update
 #>
 function Set-FirefoxPreference
 {
@@ -370,17 +386,18 @@ function Set-FirefoxPreference
         'Mozilla'
         {
             $filePath = "$InstallDirectory\Mozilla.cfg"
+            break
         }
         'Autoconfig'
         {
             $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
+            break
         }
     }
 
     $preferences = $null
 
-    $configurationContent = Get-Content -Path $filePath -ErrorAction SilentlyContinue
-    $newConfiguration = Merge-FirefoxPreference -PreferenceType $PreferenceType -PreferenceName $PreferenceName -PreferenceValue $PreferenceValue -ConfigurationContent $configurationContent -InstallDirectory $InstallDirectory -File $File
+    $newConfiguration = Merge-FirefoxPreference -PreferenceType $PreferenceType -PreferenceName $PreferenceName -PreferenceValue $PreferenceValue -InstallDirectory $InstallDirectory -File $File
 
     foreach ($preference in $newConfiguration)
     {
@@ -399,14 +416,18 @@ function Set-FirefoxPreference
                 "\\Firefox preference file `n"
                 "$preferences"
             } | Out-file -FilePath $filePath -Force -NoNewline
+            break
         }
         'Autoconfig'
         {
             ForEach-Object -InputObject $File -Process {
                 "$preferences"
             } | Out-file -FilePath $filePath -Force -NoNewline
+            break
         }
     }
+
+    Write-Verbose -Message "$PreferenceName has been set in $File file."
 }
 
 <#
@@ -449,11 +470,20 @@ function Format-FireFoxPreference
     .SYNOPSIS
         Merges Firefox preferences to a sigle array of preference hashtables
 
-    .PARAMETER Configuration
-        Array of preferences.
+    .PARAMETER PreferenceName
+        The name of the Firefox preference to configure.
 
-    .PARAMETER ConfigurationContent
-        Content of the configuration file to check.
+    .PARAMETER PreferenceType
+        The type of Firefox preference to configure.
+
+    .PARAMETER PreferenceValue
+        The Value of the Firefox preference to configure.
+
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
+
+    .PARAMETER File
+        The file name to update
 #>
 
 function Merge-FirefoxPreference
@@ -481,15 +511,10 @@ function Merge-FirefoxPreference
         [Parameter(Mandatory = $true)]
         [ValidateSet('Mozilla', 'Autoconfig')]
         [string]
-        $File,
-
-        [Parameter()]
-        [AllowNull()]
-        [psobject]
-        $ConfigurationContent
+        $File
     )
     $return = @()
-    $preferences = Get-FirefoxPreference -PreferenceName $PreferenceName -InstallDirectory $InstallDirectory -File $File
+    $preferences = Get-FirefoxPreference -InstallDirectory $InstallDirectory -File $File
     $return += $preferences | Where-Object -FilterScript {$_.PreferenceName -ne $PreferenceName}
 
     $return += @{
