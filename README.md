@@ -26,6 +26,13 @@ By default, the operating system is Windows.
 The default is x86.
 * **LocalPath**: The local path on the machine where the installation file should be downloaded.
 
+### MSFT_xFirefoxPreference
+
+* **PreferenceType**: Specify the type of Preference E.g. lockPref.
+* **PreferenceName**: Specify the name of the Preference.
+* **PreferenceValue**: Specify the value of the Preference.
+* **InstallDirectory**: Specifies the location where Mozilla Firefox is installed.
+
 ## Versions
 
 ### Unreleased
@@ -34,11 +41,12 @@ The default is x86.
 * Added default template files .codecov.yml, .gitattributes, and .gitignore, and
   .vscode folder.
 * The module manifest now contain the correct PowerShell version.
+* Added xFirefoxPreference Resource to automate Firefox Preference Configuration
 
 ### 1.2.0.0
 
-- Added logic to download installer with correct machine bits
-- Added dependency on xPSDesiredStateConfiguration
+* Added logic to download installer with correct machine bits
+* Added dependency on xPSDesiredStateConfiguration
 
 ### 1.1.0.0
 
