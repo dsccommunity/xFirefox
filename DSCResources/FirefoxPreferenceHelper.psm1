@@ -17,7 +17,6 @@ function Test-FirefoxPreconfiguration
         $InstallDirectory
     )
 
-    $return = @()
     $fileNameParam = @{
         PreferenceType   = 'lockPref'
         PreferenceName   = 'general.config.filename'
@@ -34,6 +33,7 @@ function Test-FirefoxPreconfiguration
         File            = 'Autoconfig'
     }
 
+    $return = @()
     if(-not(Test-FirefoxPreference @fileNameParam))
     {
         Write-Verbose -Message 'Firefox "GeneralConfigurationFile" preference not set to Mozilla.cfg'
@@ -116,20 +116,15 @@ function Set-FirefoxPreconfigs
         New-Item -Path $autoConfigPath -Type File
     }
 
-    foreach ($item in $Preconfigs)
+    switch ($Preconfigs)
     {
-        switch ($item)
+        'filename'
         {
-            'filename'
-            {
-                Set-FirefoxPreference -PreferenceType 'lockPref' -PreferenceName 'general.config.filename' -PreferenceValue 'Mozilla.cfg' -InstallDirectory $InstallDirectory -File 'Autoconfig'
-                break
-            }
-            'obscurevalue'
-            {
-                Set-FirefoxPreference -PreferenceType 'lockPref' -PreferenceName 'general.config.obscure_value' -PreferenceValue '0' -InstallDirectory $InstallDirectory -File 'Autoconfig'
-                break
-            }
+            Set-FirefoxPreference -PreferenceType 'lockPref' -PreferenceName 'general.config.filename' -PreferenceValue 'Mozilla.cfg' -InstallDirectory $InstallDirectory -File 'Autoconfig'
+        }
+        'obscurevalue'
+        {
+            Set-FirefoxPreference -PreferenceType 'lockPref' -PreferenceName 'general.config.obscure_value' -PreferenceValue '0' -InstallDirectory $InstallDirectory -File 'Autoconfig'
         }
     }
 }
@@ -227,7 +222,7 @@ function Get-FirefoxPreference
 function Split-FirefoxPreference
 {
     [CmdletBinding()]
-    [OutputType([hashtable[]])]
+    [OutputType([hashtable])]
     param
     (
         [Parameter(Mandatory = $true)]

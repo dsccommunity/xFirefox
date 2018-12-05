@@ -14,10 +14,11 @@ Configuration MSFT_xFirefox
         [string]
         $LocalPath = "$env:SystemDrive\Windows\DtlDownloads\Firefox Setup " + $VersionNumber +".exe"
     )
-    
+
     Import-DscResource -ModuleName xPSDesiredStateConfiguration
 
-    if ($MachineBits -eq "x64") {
+    if ($MachineBits -eq "x64")
+    {
         $OS += "64"
     }
 
@@ -26,7 +27,7 @@ Configuration MSFT_xFirefox
         Uri = "https://download.mozilla.org/?product=firefox-" + $VersionNumber + "&os=" + $OS + "&lang=" + $Language
         DestinationPath = $LocalPath
     }
-     
+
     Package Installer
     {
         Ensure = "Present"

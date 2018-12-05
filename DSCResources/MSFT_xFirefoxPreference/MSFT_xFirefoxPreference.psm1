@@ -15,6 +15,7 @@ Import-Module  "$currentPath\..\FirefoxPreferenceHelper.psm1" -Force
 function Get-TargetResource
 {
     [CmdletBinding()]
+    [OutputType([hashtable])]
     param
     (
         [Parameter(Mandatory = $true)]
