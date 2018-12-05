@@ -376,20 +376,6 @@ function Set-FirefoxPreference
         $InstallDirectory
     )
 
-    switch ($File)
-    {
-        'Mozilla'
-        {
-            $filePath = "$InstallDirectory\Mozilla.cfg"
-            break
-        }
-        'Autoconfig'
-        {
-            $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
-            break
-        }
-    }
-
     $preferences = $null
 
     $newConfiguration = Merge-FirefoxPreference -PreferenceType $PreferenceType -PreferenceName $PreferenceName -PreferenceValue $PreferenceValue -InstallDirectory $InstallDirectory -File $File
@@ -407,17 +393,17 @@ function Set-FirefoxPreference
     {
         'Mozilla'
         {
-            ForEach-Object -InputObject $File -Process {
-                "\\Firefox preference file `n"
-                "$preferences"
-            } | Out-file -FilePath $filePath -Force -NoNewline
+            $filePath = "$InstallDirectory\Mozilla.cfg"
+            $fileContent = "\\Firefox preference file `n" + $preferences
+
+            Out-file -FilePath $filePath -InputObject $fileContent -Force -NoNewline
             break
         }
         'Autoconfig'
         {
-            ForEach-Object -InputObject $File -Process {
-                "$preferences"
-            } | Out-file -FilePath $filePath -Force -NoNewline
+            $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
+
+            Out-file -FilePath $filePath -InputObject $filePath -Force -NoNewline
             break
         }
     }
