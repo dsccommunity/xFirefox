@@ -76,6 +76,7 @@ function Set-TargetResource
         $PreferenceName,
 
         [Parameter()]
+        [ValidateSet('Pref', 'lockPref', 'defaultPref', 'unlockPref', 'clearPref')]
         [string]
         $PreferenceType,
 
@@ -135,6 +136,7 @@ function Test-TargetResource
         $PreferenceName,
 
         [Parameter()]
+        [ValidateSet('Pref', 'lockPref', 'defaultPref', 'unlockPref', 'clearPref')]
         [string]
         $PreferenceType,
 
