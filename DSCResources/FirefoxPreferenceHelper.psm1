@@ -403,7 +403,7 @@ function Set-FirefoxPreference
         {
             $filePath = "$InstallDirectory\defaults\pref\autoconfig.js"
 
-            Out-file -FilePath $filePath -InputObject $filePath -Force -NoNewline
+            Out-file -FilePath $filePath -InputObject $preferences -Force -NoNewline
             break
         }
     }
