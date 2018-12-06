@@ -24,6 +24,7 @@ $TestEnvironment = Initialize-TestEnvironment `
     '// FireFox preference file'
     'lockPref("security.default_personal_cert", "Ask Every Time");'
 )
+
 $firefoxPreference = @{
     PreferenceType   = 'lockPref'
     PreferenceName   = 'security.default_personal_cert'
