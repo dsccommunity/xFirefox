@@ -19,35 +19,35 @@ $TestEnvironment = Initialize-TestEnvironment `
     -TestType Unit
 #endregion
 
-
-[System.Object[]] $firefoxcfg = @(
-    '// FireFox preference file'
-    'lockPref("security.default_personal_cert", "Ask Every Time");'
-)
-
-$firefoxPreference = @{
-    PreferenceType   = 'lockPref'
-    PreferenceName   = 'security.default_personal_cert'
-    PreferenceValue  = 'Ask Every Time'
-    InstallDirectory = ''
-}
-
-$firefoxPreference2 = @{
-    PreferenceType  = 'lockPref'
-    PreferenceName  = 'network.protocol-handler.external.shell'
-    PreferenceValue = 'false'
-    InstallDirectory = ''
-}
-
-$autoconfigPreference = @{
-    PreferenceType  = 'lockPref'
-    PreferenceName  = 'general.config.filename'
-    InstallDirectory = ''
-}
 # Begin Tests
 try
 {
     InModuleScope $DscResourceName {
+        [System.Object[]] $firefoxcfg = @(
+            '// FireFox preference file'
+            'lockPref("security.default_personal_cert", "Ask Every Time");'
+        )
+
+        $firefoxPreference = @{
+            PreferenceType   = 'lockPref'
+            PreferenceName   = 'security.default_personal_cert'
+            PreferenceValue  = 'Ask Every Time'
+            InstallDirectory = ''
+        }
+
+        $firefoxPreference2 = @{
+            PreferenceType  = 'lockPref'
+            PreferenceName  = 'network.protocol-handler.external.shell'
+            PreferenceValue = 'false'
+            InstallDirectory = ''
+        }
+
+        $autoconfigPreference = @{
+            PreferenceType  = 'lockPref'
+            PreferenceName  = 'general.config.filename'
+            InstallDirectory = ''
+        }
+
         Describe 'Get-DscResource' {
             $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
 

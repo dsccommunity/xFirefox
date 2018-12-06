@@ -257,16 +257,16 @@ function Split-FirefoxPreference
 
 <#
     .SYNOPSIS
-        Test-TargetResource tests Firefox config preconfigurations and Preferences.
+        Test-FirefoxPreference tests if the current Firefox Preference matches the desired Firefox Preference.
 
     .PARAMETER PreferenceName
-        The name of the Firefox preference to configure.
+        The name of the Firefox preference to test.
 
     .PARAMETER PreferenceType
-        The type of Firefox preference to configure.
+        The type of Firefox preference to test.
 
     .PARAMETER PreferenceValue
-        The Value of the Firefox preference to configure.
+        The Value of the Firefox preference to test.
 
     .PARAMETER InstallDirectory
         The directory where Firefox is installed.
