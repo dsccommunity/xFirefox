@@ -75,7 +75,7 @@ function Set-TargetResource
         [string]
         $PreferenceName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [string]
         $PreferenceType,
 
@@ -134,7 +134,7 @@ function Test-TargetResource
         [string]
         $PreferenceName,
 
-        [Parameter(Mandatory = $true)]
+        [Parameter()]
         [string]
         $PreferenceType,
 
