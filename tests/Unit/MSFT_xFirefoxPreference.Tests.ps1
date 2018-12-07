@@ -23,52 +23,37 @@ $TestEnvironment = Initialize-TestEnvironment `
 try
 {
     InModuleScope $DscResourceName {
-        [System.Object[]] $firefoxcfg = @(
-            '// FireFox preference file'
-            'lockPref("security.default_personal_cert", "Ask Every Time");'
-        )
-
-        $firefoxPreference = @{
-            PreferenceType   = 'lockPref'
-            PreferenceName   = 'security.default_personal_cert'
-            PreferenceValue  = 'Ask Every Time'
-            InstallDirectory = ''
-        }
-
-        $firefoxPreference2 = @{
-            PreferenceType  = 'lockPref'
-            PreferenceName  = 'network.protocol-handler.external.shell'
-            PreferenceValue = 'false'
-            InstallDirectory = ''
-        }
-
-        $autoconfigPreference = @{
-            PreferenceType  = 'lockPref'
-            PreferenceName  = 'general.config.filename'
-            InstallDirectory = ''
-        }
-
         Describe 'Get-DscResource' {
-            $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
+            $firefoxPreference = @{
+                PreferenceType   = 'lockPref'
+                PreferenceName   = 'security.default_personal_cert'
+                PreferenceValue  = 'Ask Every Time'
+                InstallDirectory = "$TestDrive\Mozilla Firefox"
+            }
+
+            [System.Object[]] $firefoxcfg = @(
+                '// FireFox preference file'
+                'lockPref("security.default_personal_cert", "Ask Every Time");'
+            )
 
             Mock -CommandName Get-Content -MockWith {$firefoxcfg}
             Mock -CommandName Get-FirefoxPreference -MockWith {$firefoxPreference}
 
             Context 'When Firefox InstallDirectory is missing or incorrect'{
-                Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq $mockInstallDirectory}
+                Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq $firefoxPreference.InstallDirectory}
 
                 It 'Should return a null "CurrentConfiguration" and the desired "InstallDirectory"'{
-                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceName $firefoxPreference.PreferenceName
-                    $result.InstallDirectory | Should -Be $mockInstallDirectory
+                    $result = Get-TargetResource -InstallDirectory $firefoxPreference.InstallDirectory -PreferenceName $firefoxPreference.PreferenceName
+                    $result.InstallDirectory | Should -Be $firefoxPreference.InstallDirectory
                     $result.CurrentConfiguration | Should -Be $null
                 }
             }
             Context 'When Mozilla.cfg path is missing or incorrect' {
-                Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq "$mockInstallDirectory\Mozilla.cfg"}
+                Mock -CommandName Test-Path -MockWith {$false} -ParameterFilter {$Path -eq "$($firefoxPreference.InstallDirectory)\Mozilla.cfg"}
 
                 It 'Should return a null "CurrentConfiguration" and the desired "InstallDirectory"' {
-                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceName $firefoxPreference.PreferenceName
-                    $result.InstallDirectory | Should -Be $mockInstallDirectory
+                    $result = Get-TargetResource -InstallDirectory $firefoxPreference.InstallDirectory -PreferenceName $firefoxPreference.PreferenceName
+                    $result.InstallDirectory | Should -Be $firefoxPreference.InstallDirectory
                     $result.CurrentConfiguration | Should -Be $null
                 }
             }
@@ -76,8 +61,8 @@ try
                 Mock -CommandName Test-Path -MockWith {$true}
 
                 It 'Should return the correct preferences in the correct format' {
-                    $result = Get-TargetResource -InstallDirectory $mockInstallDirectory -PreferenceName $firefoxPreference.PreferenceName
-                    $result.InstallDirectory | Should -Be $mockInstallDirectory
+                    $result = Get-TargetResource -InstallDirectory $firefoxPreference.InstallDirectory -PreferenceName $firefoxPreference.PreferenceName
+                    $result.InstallDirectory | Should -Be $firefoxPreference.InstallDirectory
                     $result.PreferenceType | Should -Be $firefoxPreference.PreferenceType
                     $result.PreferenceName | Should -Be $firefoxPreference.PreferenceName
                     $result.PreferenceValue | Should -Be $firefoxPreference.PreferenceValue
@@ -86,8 +71,13 @@ try
         }
 
         Describe 'Set-DscResource'{
-            $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
-            $firefoxPreference.InstallDirectory = $mockInstallDirectory
+            $firefoxPreference = @{
+                PreferenceType   = 'lockPref'
+                PreferenceName   = 'security.default_personal_cert'
+                PreferenceValue  = 'Ask Every Time'
+                InstallDirectory = "$TestDrive\Mozilla Firefox"
+            }
+
             Mock -CommandName Set-FirefoxPreconfigs -MockWith {}
             Mock -CommandName Set-FirefoxPreference -MockWith {}
 
@@ -125,8 +115,13 @@ try
         }
 
         Describe 'Test-DscResource'{
-            $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
-            $firefoxPreference.InstallDirectory = $mockInstallDirectory
+            $firefoxPreference = @{
+                PreferenceType   = 'lockPref'
+                PreferenceName   = 'security.default_personal_cert'
+                PreferenceValue  = 'Ask Every Time'
+                InstallDirectory = "$TestDrive\Mozilla Firefox"
+            }
+
             Mock -CommandName Get-TargetResource -MockWith {$firefoxPreference}
 
             Context 'When Firefox Preconfigurations are not complete'{
@@ -166,7 +161,13 @@ try
         #region helper function
         InModuleScope FirefoxPreferenceHelper {
             Describe 'Test-FirefoxPreconfiguration' {
+                [System.Object[]] $firefoxcfg = @(
+                    '// FireFox preference file'
+                    'lockPref("security.default_personal_cert", "Ask Every Time");'
+                )
+
                 $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
+
                 Mock -CommandName Get-Content -MockWith {$firefoxcfg}
                 Context 'When all preconfigs are incorrect' {
                     Mock -CommandName Test-FirefoxPreference -MockWith {$false}
@@ -222,6 +223,7 @@ try
                 }
             }
             Describe 'Set-FirefoxPreconfigs' {
+
                 $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
                 $autoConfigPath = "$mockInstallDirectory\defaults\pref\autoconfig.js"
                 $firefoxCfgPath = "$mockInstallDirectory\Mozilla.cfg"
@@ -289,13 +291,24 @@ try
                 }
             }
             Describe 'Get-FirefoxPreference' {
-                $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
+                $firefoxPreference = @{
+                    PreferenceType   = 'lockPref'
+                    PreferenceName   = 'security.default_personal_cert'
+                    PreferenceValue  = 'Ask Every Time'
+                    InstallDirectory = "$TestDrive\Mozilla Firefox"
+                }
+
+                [System.Object[]] $firefoxcfg = @(
+                    '// FireFox preference file'
+                    'lockPref("security.default_personal_cert", "Ask Every Time");'
+                )
+
                 Mock -CommandName Split-FirefoxPreference -MockWith {$firefoxPreference}
                 Mock -CommandName Get-Content -MockWith {$firefoxcfg}
 
                 Context 'When no "Preference" is defined' {
                     It 'Should return the correct object'{
-                        $result = Get-FirefoxPreference -InstallDirectory $mockInstallDirectory -File 'Mozilla'
+                        $result = Get-FirefoxPreference -InstallDirectory $firefoxPreference.InstallDirectory -File 'Mozilla'
                         $result.PreferenceType | Should -Be 'lockPref'
                         $result.PreferenceName | Should -Be 'security.default_personal_cert'
                         $result.PreferenceValue | Should -Be 'Ask Every Time'
@@ -303,7 +316,7 @@ try
                 }
                 Context 'When "Preference" is defined' {
                     It 'Should return the correct object'{
-                        $result = Get-FirefoxPreference -PreferenceName $firefoxPreference.PreferenceName -InstallDirectory $mockInstallDirectory -File 'Mozilla'
+                        $result = Get-FirefoxPreference -PreferenceName $firefoxPreference.PreferenceName -InstallDirectory $firefoxPreference.InstallDirectory -File 'Mozilla'
                         $result.PreferenceType | Should -Be 'lockPref'
                         $result.PreferenceName | Should -Be 'security.default_personal_cert'
                         $result.PreferenceValue | Should -Be 'Ask Every Time'
@@ -331,6 +344,13 @@ try
                 }
             }
             Describe 'Test-FirefoxPreference' {
+                $firefoxPreference = @{
+                    PreferenceType   = 'lockPref'
+                    PreferenceName   = 'security.default_personal_cert'
+                    PreferenceValue  = 'Ask Every Time'
+                    InstallDirectory = "$TestDrive\Mozilla Firefox"
+                }
+
                 $mockPreferenceTypeDifference = @{
                     PreferenceType  = 'Pref'
                     PreferenceName  = 'security.default_personal_cert'
@@ -377,10 +397,22 @@ try
                 }
             }
             Describe 'Set-FirefoxConfiguration' {
-                $mockInstallDirectory = "$TestDrive\Mozilla Firefox"
-                $firefoxPreference.InstallDirectory = $mockInstallDirectory
-                $firefoxPath = "$mockInstallDirectory\Mozilla.cfg"
-                $autoconfigPath = "$mockInstallDirectory\defaults\pref\autoconfig.js"
+                $firefoxPreference = @{
+                    PreferenceType   = 'lockPref'
+                    PreferenceName   = 'security.default_personal_cert'
+                    PreferenceValue  = 'Ask Every Time'
+                    InstallDirectory = "$TestDrive\Mozilla Firefox"
+                }
+
+                $firefoxPreference2 = @{
+                    PreferenceType  = 'lockPref'
+                    PreferenceName  = 'network.protocol-handler.external.shell'
+                    PreferenceValue = 'false'
+                    InstallDirectory = "$TestDrive\Mozilla Firefox"
+                }
+
+                $firefoxPath = "$($firefoxPreference.InstallDirectory)\Mozilla.cfg"
+                $autoconfigPath = "$($firefoxPreference.InstallDirectory)\defaults\pref\autoconfig.js"
                 $mergedConfiguration = @(
                     $firefoxPreference
                     $firefoxPreference2
@@ -406,7 +438,8 @@ try
                 }
 
                 Context 'When configuring Mozilla.cfg with prior configuration' {
-                    $firefoxPreference2.InstallDirectory = $mockInstallDirectory
+                    $mergedConfiguration = @($firefoxPreference,$firefoxPreference2)
+
                     New-Item -Path $firefoxPath -ItemType File -Force
                     Mock -CommandName Format-FireFoxPreference -ParameterFilter {$Value -eq 'Ask Every Time'} -MockWith {'"Ask Every Time"'}
                     Mock -CommandName Format-FireFoxPreference -ParameterFilter {$Value -eq 'false'} -MockWith {'false'}
@@ -431,14 +464,14 @@ try
                         PreferenceType   = 'lockPref'
                         PreferenceName   = 'general.config.filename'
                         PreferenceValue  = 'Mozilla.cfg'
-                        InstallDirectory = $mockInstallDirectory
+                        InstallDirectory = $firefoxPreference.InstallDirectory
                     }
 
                     $autoconfigPreference2 = @{
                         PreferenceType   = 'lockPref'
                         PreferenceName   = 'general.config.obscure_value'
                         PreferenceValue  = '0'
-                        InstallDirectory = $mockInstallDirectory
+                        InstallDirectory = $firefoxPreference.InstallDirectory
                     }
 
                     New-Item -Path $autoconfigPath -ItemType File -Force
@@ -482,6 +515,20 @@ try
                 }
             }
             Describe 'Merge-FirefoxPreference' {
+                $firefoxPreference = @{
+                    PreferenceType   = 'lockPref'
+                    PreferenceName   = 'security.default_personal_cert'
+                    PreferenceValue  = 'Ask Every Time'
+                    InstallDirectory = "$TestDrive\Mozilla Firefox"
+                }
+
+                $firefoxPreference2 = @{
+                    PreferenceType  = 'lockPref'
+                    PreferenceName  = 'network.protocol-handler.external.shell'
+                    PreferenceValue = 'false'
+                    InstallDirectory = "$TestDrive\Mozilla Firefox"
+                }
+
                 Context 'When there is no current configuration' {
                     Mock -CommandName Get-FirefoxPreference -MockWith {$null}
                     It 'Should not throw' {
@@ -514,6 +561,12 @@ try
                     }
                 }
                 Context 'When current configuration exists and does not match supplied configuration' {
+                    $firefoxPreference = @{
+                        PreferenceType   = 'lockPref'
+                        PreferenceName   = 'security.default_personal_cert'
+                        PreferenceValue  = 'Ask Every Time'
+                        InstallDirectory = "$TestDrive\Mozilla Firefox"
+                    }
                     Mock -CommandName Get-FirefoxPreference -MockWith {$firefoxPreference}
                     $result = Merge-FirefoxPreference @firefoxPreference2 -File 'Mozilla'
                     It 'Should not throw' {
