@@ -34,7 +34,7 @@ function Test-FirefoxPreconfiguration
     }
 
     $return = @()
-    if(-not(Test-FirefoxPreference @fileNameParam))
+    if (-not(Test-FirefoxPreference @fileNameParam))
     {
         Write-Verbose -Message 'Firefox "GeneralConfigurationFile" preference not set to Mozilla.cfg'
         $return += 'filename'
@@ -91,20 +91,20 @@ function Test-ConfigStartWithComment
     .SYNOPSIS
         Configures firefox preconfiguration requirements.
 
-    .PARAMETER Preconfigs
+    .PARAMETER Preconfiguration
         Array of which preconfigurations need to be set.
 
     .PARAMETER InstallDirectory
         Directory where FireFox is installed.
 #>
-function Set-FirefoxPreconfigs
+function Set-FirefoxPreconfiguration
 {
     [CmdletBinding()]
     param
     (
         [Parameter(Mandatory = $true)]
         [string[]]
-        $Preconfigs,
+        $Preconfiguration,
 
         [Parameter(Mandatory = $true)]
         [string]
@@ -116,7 +116,7 @@ function Set-FirefoxPreconfigs
         New-Item -Path $autoConfigPath -Type File
     }
 
-    switch ($Preconfigs)
+    switch ($Preconfiguration)
     {
         'filename'
         {
@@ -431,7 +431,7 @@ function Format-FireFoxPreference
 
     switch ($Value)
     {
-        {[bool]::TryParse($Value, [ref]$null) }
+        { [bool]::TryParse($Value, [ref]$null) }
         {
             $result = $Value; break
         }

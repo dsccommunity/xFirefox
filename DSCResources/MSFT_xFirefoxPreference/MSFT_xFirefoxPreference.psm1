@@ -92,13 +92,13 @@ function Set-TargetResource
 
     if (-not(Test-Path -Path $InstallDirectory))
     {
-        throw -Message "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
+        throw "$InstallDirectory not found. Verify Firefox is installed and the correct Install Directory is defined."
     }
 
     $preconfigs = Test-FirefoxPreconfiguration -InstallDirectory $InstallDirectory
     if ($preconfigs)
     {
-        Set-FirefoxPreconfigs -Preconfigs $preconfigs -InstallDirectory $InstallDirectory
+        Set-FirefoxPreconfiguration -Preconfiguration $preconfigs -InstallDirectory $InstallDirectory
     }
 
     if (-not(Test-Path -Path "$InstallDirectory\Mozilla.cfg"))

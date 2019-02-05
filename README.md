@@ -28,10 +28,14 @@ The default is x86.
 
 ### MSFT_xFirefoxPreference
 
-* **PreferenceType**: Specify the type of Preference E.g. lockPref.
+* **PreferenceType**: Specify the type of Preference { Pref | lockPref | defaultPref | unlockPref | clearPref }
+Specifies the preference type of the Firefox Preference to be configured
 * **PreferenceName**: Specify the name of the Preference.
+Specifies the name of the Firefox Preference to be configured
 * **PreferenceValue**: Specify the value of the Preference.
+Specifies value of the Firefox Preference to be configured
 * **InstallDirectory**: Specifies the location where Mozilla Firefox is installed.
+Specifies the directory where Firefox is installed
 
 ## Versions
 
