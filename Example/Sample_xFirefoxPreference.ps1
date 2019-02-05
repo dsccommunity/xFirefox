@@ -1,5 +1,21 @@
 #Updates Firefox preference configurations.
+<#
+    .SYNOPSIS
+        This sample configuration allows you to update a single Firefox preference
 
+    .PARAMETER PreferenceName
+        The name of the Firefox preference to configure.
+
+    .PARAMETER PreferenceType
+        The type of Firefox preference to configure.
+
+    .PARAMETER PreferenceValue
+        The Value of the Firefox preference to configure.
+
+    .PARAMETER InstallDirectory
+        The directory where Firefox is installed.
+
+#>
 Configuration Sample_SetFirefoxPreference
 {
     param
