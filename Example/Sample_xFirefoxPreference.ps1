@@ -1,4 +1,3 @@
-#Updates Firefox preference configurations.
 <#
     .SYNOPSIS
         This sample configuration allows you to update a single Firefox preference
