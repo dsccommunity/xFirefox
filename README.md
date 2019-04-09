@@ -44,7 +44,7 @@ Specifies the directory where Firefox is installed
 * Update appveyor.yml to use the default template.
 * Added default template files .codecov.yml, .gitattributes, and .gitignore, and
   .vscode folder.
-* The module manifest now contain the correct PowerShell version.
+* The module manifest now contains the correct PowerShell version.
 * Added xFirefoxPreference Resource to automate Firefox Preference Configuration
 
 ### 1.2.0.0
