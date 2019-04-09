@@ -51,7 +51,7 @@ PowerShellVersion = '4.0'
 RequiredModules = @( 'xPSDesiredStateConfiguration' )
 
 # Assemblies that must be loaded prior to importing this module
-# RequiredAssemblies = @()
+RequiredAssemblies = @()
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
@@ -76,6 +76,9 @@ VariablesToExport = '*'
 
 # Aliases to export from this module
 AliasesToExport = '*'
+
+# DSC resources to export from this module
+DscResourcesToExport = @('MSFT_xFirefox','xFirefoxPreference')
 
 # List of all modules packaged with this module
 # ModuleList = @()
@@ -117,6 +120,3 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
-
-
-
