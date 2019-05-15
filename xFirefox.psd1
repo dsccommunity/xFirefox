@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.2.0.0'
+moduleVersion = '1.3.0.0'
 
 # ID used to uniquely identify this module
 GUID = 'df697d0d-4300-4ea1-b14b-78861f0e48da'
@@ -104,8 +104,11 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '- Added logic to download installer with correct machine bits
-- Added dependency on xPSDesiredStateConfiguration
+        ReleaseNotes = '* Update appveyor.yml to use the default template.
+* Added default template files .codecov.yml, .gitattributes, and .gitignore, and
+  .vscode folder.
+* The module manifest now contains the correct PowerShell version.
+* Added xFirefoxPreference Resource to automate Firefox Preference Configuration
 
 '
 
@@ -120,3 +123,4 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+

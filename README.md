@@ -41,6 +41,8 @@ Specifies the directory where Firefox is installed
 
 ### Unreleased
 
+### 1.3.0.0
+
 * Update appveyor.yml to use the default template.
 * Added default template files .codecov.yml, .gitattributes, and .gitignore, and
   .vscode folder.
