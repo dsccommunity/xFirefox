@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '1.2.0.0'
+moduleVersion = '1.3.0.0'
 
 # ID used to uniquely identify this module
 GUID = 'df697d0d-4300-4ea1-b14b-78861f0e48da'
@@ -30,7 +30,7 @@ Copyright = '(c) 2014 Microsoft. All rights reserved.'
 Description = 'Firefox Main module'
 
 # Minimum version of the Windows PowerShell engine required by this module
-# PowerShellVersion = ''
+PowerShellVersion = '4.0'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
@@ -51,7 +51,7 @@ Description = 'Firefox Main module'
 RequiredModules = @( 'xPSDesiredStateConfiguration' )
 
 # Assemblies that must be loaded prior to importing this module
-# RequiredAssemblies = @()
+RequiredAssemblies = @()
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
 # ScriptsToProcess = @()
@@ -77,6 +77,9 @@ VariablesToExport = '*'
 # Aliases to export from this module
 AliasesToExport = '*'
 
+# DSC resources to export from this module
+DscResourcesToExport = @('MSFT_xFirefox','xFirefoxPreference')
+
 # List of all modules packaged with this module
 # ModuleList = @()
 
@@ -101,8 +104,11 @@ PrivateData = @{
         # IconUri = ''
 
         # ReleaseNotes of this module
-        ReleaseNotes = '- Added logic to download installer with correct machine bits
-- Added dependency on xPSDesiredStateConfiguration
+        ReleaseNotes = '* Update appveyor.yml to use the default template.
+* Added default template files .codecov.yml, .gitattributes, and .gitignore, and
+  .vscode folder.
+* The module manifest now contains the correct PowerShell version.
+* Added xFirefoxPreference Resource to automate Firefox Preference Configuration
 
 '
 
@@ -117,6 +123,4 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
-
-
 
